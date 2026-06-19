@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from .agent_components import build_agent_component_report
+from .agent_core import read_scar_memory
+from .agent_proofs import build_agent_proof_export
 from .approval_queue import pending_approvals
 from .quarantine import list_records
 from .status_report import build_status_report
@@ -25,6 +27,8 @@ SIGNATURE_PATH = Path(".subreparo") / "report_signature.json"
 SETUP_PROFILE_PATH = Path(".subreparo") / "setup_profile.json"
 FEEDBACK_PATH = Path(".subreparo") / "feedback.json"
 SNAPSHOT_MANIFEST_PATH = Path(".subreparo") / "snapshots" / "snapshot_manifest.jsonl"
+AGENT_CYCLES_PATH = Path(".subreparo") / "agent_cycles.jsonl"
+AGENT_SCARS_PATH = Path(".subreparo") / "agent_scars.jsonl"
 STATE_DIR = Path(".subreparo")
 
 
@@ -86,6 +90,16 @@ def render_agent_components() -> str:
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
+def render_immune_agent_memory() -> str:
+    payload = read_scar_memory(Path("."), limit=10)
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def render_immune_agent_proof() -> str:
+    payload = build_agent_proof_export(Path("."))
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
 def render_watch_plan() -> str:
     payload = build_watch_plan(Path("."))
     return json.dumps(payload, indent=2, sort_keys=True)
@@ -137,6 +151,9 @@ def render_page() -> str:
     quarantine = html.escape(render_quarantine())
     cortex_status = html.escape(render_status_report())
     agent_components = html.escape(render_agent_components())
+    immune_memory = html.escape(render_immune_agent_memory())
+    immune_proof = html.escape(render_immune_agent_proof())
+    agent_cycles = html.escape(json.dumps(tail_jsonl(AGENT_CYCLES_PATH, limit=6), indent=2, sort_keys=True) if AGENT_CYCLES_PATH.exists() else "No Immune agent cycles found.")
     approvals = html.escape(render_approvals())
     snapshots = html.escape(render_snapshots())
     swarm_catalog = html.escape(render_swarm_catalog())
@@ -144,6 +161,8 @@ def render_page() -> str:
     ledger_count = count_lines(LEDGER_PATH)
     alert_count = count_lines(ALERTS_PATH)
     quarantine_count = len(list_records(STATE_DIR))
+    agent_cycle_count = count_lines(AGENT_CYCLES_PATH)
+    scar_count = count_lines(AGENT_SCARS_PATH)
     status_payload = build_status_report(Path("."))
     component_payload = build_agent_component_report(Path("."))
     swarm_plan_count = len(list_swarm_plans(Path(".")))
@@ -171,6 +190,7 @@ def render_page() -> str:
     .swarm-node {{ padding: 12px; border: 1px solid #39445c; background: #202638; border-radius: 12px; text-align: center; }}
     #tab-overview:checked ~ .tab-panels #panel-overview,
     #tab-cortex:checked ~ .tab-panels #panel-cortex,
+    #tab-immune-agent:checked ~ .tab-panels #panel-immune-agent,
     #tab-swarms:checked ~ .tab-panels #panel-swarms,
     #tab-components:checked ~ .tab-panels #panel-components,
     #tab-protection:checked ~ .tab-panels #panel-protection,
@@ -186,6 +206,7 @@ def render_page() -> str:
   <div class="tabs" aria-label="Dashboard tabs">
     <input id="tab-overview" type="radio" name="dashboard-tabs" checked>
     <input id="tab-cortex" type="radio" name="dashboard-tabs">
+    <input id="tab-immune-agent" type="radio" name="dashboard-tabs">
     <input id="tab-swarms" type="radio" name="dashboard-tabs">
     <input id="tab-components" type="radio" name="dashboard-tabs">
     <input id="tab-protection" type="radio" name="dashboard-tabs">
@@ -193,103 +214,20 @@ def render_page() -> str:
     <nav class="tab-labels" aria-label="Dashboard tabs">
       <label for="tab-overview">Overview</label>
       <label for="tab-cortex">Cortex</label>
+      <label for="tab-immune-agent">Immune Agent</label>
       <label for="tab-swarms">Swarms</label>
       <label for="tab-components">Agent components</label>
       <label for="tab-protection">Protection</label>
       <label for="tab-reports">Reports</label>
     </nav>
     <div class="tab-panels">
-      <section id="panel-overview" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card">
-            <h2>Status</h2>
-            <div class="metric">Ledger records: {ledger_count}</div>
-            <div class="metric">Alerts: {alert_count}</div>
-            <div class="metric">Quarantine: {quarantine_count}</div>
-            <div class="metric">Swarm plans: {swarm_plan_count}</div>
-            <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
-            <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
-          </article>
-          <article class="card">
-            <h2>Setup profile</h2>
-            <pre>{setup}</pre>
-          </article>
-        </div>
-      </section>
-      <section id="panel-cortex" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card">
-            <h2>Cortex control layer</h2>
-            <div class="metric">Tasks: {status_payload["task_count"]}</div>
-            <div class="metric">Memory: {status_payload["memory_count"]}</div>
-            <div class="metric">Approvals: {status_payload["pending_approvals"]}</div>
-            <div class="metric">Outcomes: {status_payload["outcome_count"]}</div>
-            <pre>{cortex_status}</pre>
-          </article>
-          <article class="card">
-            <h2>Pending approvals</h2>
-            <pre>{approvals}</pre>
-          </article>
-          <article class="card">
-            <h2>Snapshots</h2>
-            <pre>{snapshots}</pre>
-          </article>
-        </div>
-      </section>
-      <section id="panel-swarms" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card">
-            <h2>Live swarm map</h2>
-            <div class="metric">Roles: {role_count}</div>
-            <div class="metric">Tools: {tool_count}</div>
-            <div class="metric">Saved plans: {swarm_plan_count}</div>
-            <div class="swarm-map">
-              <div class="swarm-node">Planner</div>
-              <div class="swarm-node">Sentinel</div>
-              <div class="swarm-node">Builder</div>
-              <div class="swarm-node">Tester</div>
-              <div class="swarm-node">Reviewer</div>
-              <div class="swarm-node">Archivist</div>
-            </div>
-            <p>Goal → route → role → bounded tools → approval requirement → saved plan.</p>
-          </article>
-          <article class="card">
-            <h2>Saved swarm plans</h2>
-            <pre>{swarm_plans}</pre>
-          </article>
-          <article class="card">
-            <h2>Swarm roles and tools</h2>
-            <pre>{swarm_catalog}</pre>
-          </article>
-        </div>
-      </section>
-      <section id="panel-components" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card">
-            <h2>AI agent components</h2>
-            <div class="metric">Registered: {component_payload["registered_count"]}</div>
-            <div class="metric">Operational: {component_payload["operational_count"]}</div>
-            <pre>{agent_components}</pre>
-          </article>
-        </div>
-      </section>
-      <section id="panel-protection" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card"><h2>Trust report</h2><pre>{trust}</pre></article>
-          <article class="card"><h2>False-positive feedback</h2><pre>{feedback}</pre></article>
-          <article class="card"><h2>Watch plan</h2><pre>{watch_plan}</pre></article>
-          <article class="card"><h2>Quarantine</h2><pre>{quarantine}</pre></article>
-          <article class="card"><h2>Monitor alerts</h2><pre>{alerts}</pre></article>
-        </div>
-      </section>
-      <section id="panel-reports" class="tab-panel">
-        <div class="panel-grid">
-          <article class="card"><h2>Quality gate</h2><pre>{quality}</pre></article>
-          <article class="card"><h2>Report signature</h2><pre>{signature}</pre></article>
-          <article class="card"><h2>Latest report</h2><pre>{report}</pre></article>
-          <article class="card"><h2>Chain export preview</h2><pre>{export}</pre></article>
-        </div>
-      </section>
+      <section id="panel-overview" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Status</h2><div class="metric">Ledger records: {ledger_count}</div><div class="metric">Alerts: {alert_count}</div><div class="metric">Quarantine: {quarantine_count}</div><div class="metric">Swarm plans: {swarm_plan_count}</div><div class="metric">Agent cycles: {agent_cycle_count}</div><div class="metric">Scars: {scar_count}</div><div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div><div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div></article><article class="card"><h2>Setup profile</h2><pre>{setup}</pre></article></div></section>
+      <section id="panel-cortex" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Cortex control layer</h2><div class="metric">Tasks: {status_payload["task_count"]}</div><div class="metric">Memory: {status_payload["memory_count"]}</div><div class="metric">Approvals: {status_payload["pending_approvals"]}</div><div class="metric">Outcomes: {status_payload["outcome_count"]}</div><pre>{cortex_status}</pre></article><article class="card"><h2>Pending approvals</h2><pre>{approvals}</pre></article><article class="card"><h2>Snapshots</h2><pre>{snapshots}</pre></article></div></section>
+      <section id="panel-immune-agent" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Immune agent core</h2><div class="metric">Cycles: {agent_cycle_count}</div><div class="metric">Scars: {scar_count}</div><p>Loop: observe → detect → plan → repair → verify. Run <code>subreparo-immune-agent . --cycle "project health review" --json</code>.</p></article><article class="card"><h2>Recent cycles</h2><pre>{agent_cycles}</pre></article><article class="card"><h2>Scar and ledger memory</h2><pre>{immune_memory}</pre></article><article class="card"><h2>Latest proof export</h2><pre>{immune_proof}</pre></article></div></section>
+      <section id="panel-swarms" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Live swarm map</h2><div class="metric">Roles: {role_count}</div><div class="metric">Tools: {tool_count}</div><div class="metric">Saved plans: {swarm_plan_count}</div><div class="swarm-map"><div class="swarm-node">Planner</div><div class="swarm-node">Sentinel</div><div class="swarm-node">Builder</div><div class="swarm-node">Tester</div><div class="swarm-node">Reviewer</div><div class="swarm-node">Archivist</div></div><p>Goal → route → role → bounded tools → approval requirement → saved plan.</p></article><article class="card"><h2>Saved swarm plans</h2><pre>{swarm_plans}</pre></article><article class="card"><h2>Swarm roles and tools</h2><pre>{swarm_catalog}</pre></article></div></section>
+      <section id="panel-components" class="tab-panel"><div class="panel-grid"><article class="card"><h2>AI agent components</h2><div class="metric">Registered: {component_payload["registered_count"]}</div><div class="metric">Operational: {component_payload["operational_count"]}</div><pre>{agent_components}</pre></article></div></section>
+      <section id="panel-protection" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Trust report</h2><pre>{trust}</pre></article><article class="card"><h2>False-positive feedback</h2><pre>{feedback}</pre></article><article class="card"><h2>Watch plan</h2><pre>{watch_plan}</pre></article><article class="card"><h2>Quarantine</h2><pre>{quarantine}</pre></article><article class="card"><h2>Monitor alerts</h2><pre>{alerts}</pre></article></div></section>
+      <section id="panel-reports" class="tab-panel"><div class="panel-grid"><article class="card"><h2>Quality gate</h2><pre>{quality}</pre></article><article class="card"><h2>Report signature</h2><pre>{signature}</pre></article><article class="card"><h2>Latest report</h2><pre>{report}</pre></article><article class="card"><h2>Chain export preview</h2><pre>{export}</pre></article></div></section>
     </div>
   </div>
 </main>
