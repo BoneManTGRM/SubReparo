@@ -1,0 +1,18 @@
+This directory is reserved for the pinned Polkadot SDK foundation.
+
+The full SDK source is installed through the repository submodule configuration:
+
+  git submodule update --init --recursive
+
+Target upstream:
+
+  https://github.com/paritytech/polkadot-sdk.git
+
+Pinned upstream commit used for planning:
+
+  bcafdb3d87eb3756f64bd1e830b0785d17a86812
+
+SubReparo additions are kept outside the SDK tree for clarity and copied into the SDK workspace by:
+
+  scripts/bootstrap-sdk-foundation.sh
+  scripts/bootstrap-sdk-foundation.ps1
