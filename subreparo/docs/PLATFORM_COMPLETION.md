@@ -10,4 +10,12 @@ subreparo-updater . --json
 subreparo-fleet . --json
 ```
 
+## Coverage
+
+- Desktop tray manifest.
+- Alert planning and local alert inbox records.
+- Platform package metadata.
+- Dry-run update plan.
+- Local fleet dashboard manifest.
+
 The commands are local-first and preview-oriented.
