@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
 
+from .agent_components import build_agent_component_report
 from .approval_queue import pending_approvals
 from .quarantine import list_records
 from .status_report import build_status_report
@@ -62,6 +63,11 @@ def render_status_report() -> str:
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
+def render_agent_components() -> str:
+    payload = build_agent_component_report(Path("."))
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
 def render_approvals() -> str:
     approvals = pending_approvals(STATE_DIR / "approval_queue.jsonl")
     if not approvals:
@@ -90,12 +96,14 @@ def render_page() -> str:
     quality = html.escape(read_text(QUALITY_PATH, "No quality report found. Run `subreparo-immune quality .`."))
     quarantine = html.escape(render_quarantine())
     cortex_status = html.escape(render_status_report())
+    agent_components = html.escape(render_agent_components())
     approvals = html.escape(render_approvals())
     snapshots = html.escape(render_snapshots())
     ledger_count = count_lines(LEDGER_PATH)
     alert_count = count_lines(ALERTS_PATH)
     quarantine_count = len(list_records(STATE_DIR))
     status_payload = build_status_report(Path("."))
+    component_payload = build_agent_component_report(Path("."))
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -132,6 +140,12 @@ def render_page() -> str:
     <div class="metric">Approvals: {status_payload["pending_approvals"]}</div>
     <div class="metric">Outcomes: {status_payload["outcome_count"]}</div>
     <pre>{cortex_status}</pre>
+  </section>
+  <section>
+    <h2>AI agent components</h2>
+    <div class="metric">Registered: {component_payload["registered_count"]}</div>
+    <div class="metric">Operational: {component_payload["operational_count"]}</div>
+    <pre>{agent_components}</pre>
   </section>
   <section>
     <h2>Pending approvals</h2>
