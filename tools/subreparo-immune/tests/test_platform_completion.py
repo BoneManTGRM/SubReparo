@@ -57,7 +57,9 @@ def test_installer_manifest_covers_desktop_platforms() -> None:
     manifest = build_installer_manifest()
 
     platforms = {item["platform"] for item in manifest["platforms"]}
+    entrypoints = set(manifest["platforms"][0]["entrypoints"])
     assert platforms == {"windows", "macos", "linux"}
+    assert {"subreparo-updater", "subreparo-fleet"} <= entrypoints
     assert manifest["release_gate"]["manual_review_required"] is True
 
 
