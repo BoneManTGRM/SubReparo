@@ -1,0 +1,43 @@
+name: Bootstrap Polkadot SDK Foundation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SubReparo
+        uses: actions/checkout@v4
+
+      - name: Clone Polkadot SDK
+        run: |
+          mkdir -p sdk
+          git clone --depth 1 https://github.com/paritytech/polkadot-sdk.git sdk/polkadot-sdk
+
+      - name: Copy SubReparo additions into SDK workspace
+        run: |
+          mkdir -p sdk/polkadot-sdk/subreparo
+          mkdir -p sdk/polkadot-sdk/tools
+          mkdir -p sdk/polkadot-sdk/frame/reparodynamics
+          cp -R frame/reparodynamics/. sdk/polkadot-sdk/frame/reparodynamics/
+          cp -R tools/subreparo-immune sdk/polkadot-sdk/tools/subreparo-immune
+          cp -R subreparo/docs sdk/polkadot-sdk/subreparo/docs
+          cat > sdk/polkadot-sdk/SUBREPARO_FOUNDATION.md <<'NOTES'
+          # SubReparo Polkadot SDK Foundation
+
+          This artifact contains Polkadot SDK plus SubReparo additions:
+
+          - frame/reparodynamics
+          - tools/subreparo-immune
+          - subreparo/docs
+
+          Next step: wire pallet-reparodynamics into a selected SDK runtime/template.
+          NOTES
+
+      - name: Upload SDK foundation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: subreparo-polkadot-sdk-foundation
+          path: sdk/polkadot-sdk
+          retention-days: 7
