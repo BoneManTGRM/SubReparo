@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .dashboard import serve
 from .engine import run_local
+from .immune_patrol import patrol
 from .scoring import calculate_score
 from .swarm import flatten, run_swarm
 
@@ -26,6 +27,10 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_parser.add_argument("path", nargs="?", default=".")
     doctor_parser.add_argument("--website", action="append", default=[])
     doctor_parser.add_argument("--json", action="store_true")
+
+    patrol_parser = subparsers.add_parser("patrol", help="Inspect local files for suspicious immune signals.")
+    patrol_parser.add_argument("path", nargs="?", default=".")
+    patrol_parser.add_argument("--json", action="store_true")
 
     review_parser = subparsers.add_parser("review", help="Run all local analyzer groups.")
     review_parser.add_argument("path", nargs="?", default=".")
@@ -83,6 +88,23 @@ def command_doctor(args: argparse.Namespace) -> int:
     return 0 if score["value"] >= 70 else 2
 
 
+def command_patrol(args: argparse.Namespace) -> int:
+    findings = patrol(Path(args.path))
+    score = calculate_score(findings)
+    payload = {"score": score.to_dict(), "findings": [finding.to_dict() for finding in findings]}
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Immune Patrol")
+        print("=======================")
+        print(f"Score: {score.value}/100 ({score.grade})")
+        print(f"Findings: {score.findings}")
+        for finding in findings[:12]:
+            print(f"- [{finding.severity.value.upper()}] {finding.message} at {finding.target}")
+            print(f"  {finding.recommendation}")
+    return 0 if score.value >= 70 else 2
+
+
 def command_review(args: argparse.Namespace) -> int:
     results = run_swarm(Path(args.path), websites=args.website)
     findings = flatten(results)
@@ -128,6 +150,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_run(args)
     if args.command == "doctor":
         return command_doctor(args)
+    if args.command == "patrol":
+        return command_patrol(args)
     if args.command == "review":
         return command_review(args)
     if args.command == "dashboard":
