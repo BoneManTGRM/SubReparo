@@ -10,6 +10,7 @@ from .dashboard import serve
 from .engine import run_local
 from .feedback import apply_false_positive_feedback, load_feedback, mark_false_positive
 from .firewall import firewall_suggestions
+from .forensic_report import build_forensic_report
 from .incident_bundle import create_bundle
 from .immune_patrol import patrol
 from .inventory import dependency_inventory
@@ -105,6 +106,10 @@ def build_parser() -> argparse.ArgumentParser:
     signature_parser.add_argument("path", nargs="?", default=".")
     signature_parser.add_argument("--verify", action="store_true")
     signature_parser.add_argument("--json", action="store_true")
+
+    forensic_parser = subparsers.add_parser("forensic", help="Create an expert local forensic report.")
+    forensic_parser.add_argument("path", nargs="?", default=".")
+    forensic_parser.add_argument("--json", action="store_true")
 
     timeline_parser = subparsers.add_parser("timeline", help="Show local event timeline.")
     timeline_parser.add_argument("path", nargs="?", default=".")
@@ -411,6 +416,17 @@ def command_sign_report(args: argparse.Namespace) -> int:
     return 0 if not args.verify or payload.get("valid") else 2
 
 
+def command_forensic(args: argparse.Namespace) -> int:
+    payload = build_forensic_report(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Expert Forensic Report")
+        print("================================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
 def command_timeline(args: argparse.Namespace) -> int:
     events = build_timeline(Path(args.path))
     if args.json:
@@ -573,6 +589,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_watch_plan(args)
     if args.command == "sign-report":
         return command_sign_report(args)
+    if args.command == "forensic":
+        return command_forensic(args)
     if args.command == "timeline":
         return command_timeline(args)
     if args.command == "trends":
