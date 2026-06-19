@@ -6,6 +6,13 @@ SubReparo is a promising early system: bio-inspired repair memory for AI/softwar
 
 The product is intentionally local-first. The chain should prove and remember verified repair summaries, not replace the local engine.
 
+## Latest completed platform batch
+
+- Added dashboard visibility for Cortex tasks, memory, approvals, outcomes, quality reports, and snapshots.
+- Added dashboard tests for Cortex metrics, approval rendering, and snapshot manifest rendering.
+- Expanded CI smoke coverage for `subreparo-cortex` status, plan, next-task, and approval commands.
+- Kept the batch local, defensive, and reviewable.
+
 ## Phase 1: Local-first MVP
 
 - Package `tools/subreparo-immune` for PyPI.
