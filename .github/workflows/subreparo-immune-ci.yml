@@ -62,6 +62,8 @@ jobs:
           subreparo-cortex "$tmpdir" --route "run quality checks" --json
           subreparo-cortex "$tmpdir" --orchestrate "run quality checks" --json
           subreparo-cortex "$tmpdir" --plans --json
+          subreparo-cortex "$tmpdir" --messaging --json
+          python -m subreparo_immune.messaging_cli --status --json
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
           mkdir -p "$tmpdir/addons/docs"
