@@ -4,7 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
+from .dashboard import serve
 from .engine import run_local
+from .scoring import calculate_score
+from .swarm import flatten, run_swarm
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -18,6 +21,20 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("path", nargs="?", default=".")
     run_parser.add_argument("--website", action="append", default=[])
     run_parser.add_argument("--json", action="store_true")
+
+    doctor_parser = subparsers.add_parser("doctor", help="Run a user-friendly full local review.")
+    doctor_parser.add_argument("path", nargs="?", default=".")
+    doctor_parser.add_argument("--website", action="append", default=[])
+    doctor_parser.add_argument("--json", action="store_true")
+
+    review_parser = subparsers.add_parser("review", help="Run all local analyzer groups.")
+    review_parser.add_argument("path", nargs="?", default=".")
+    review_parser.add_argument("--website", action="append", default=[])
+    review_parser.add_argument("--json", action="store_true")
+
+    dashboard_parser = subparsers.add_parser("dashboard", help="Start the local dashboard.")
+    dashboard_parser.add_argument("--host", default="127.0.0.1")
+    dashboard_parser.add_argument("--port", type=int, default=8765)
 
     init_parser = subparsers.add_parser("init", help="Initialize local SubReparo state.")
     init_parser.add_argument("path", nargs="?", default=".")
@@ -40,6 +57,58 @@ def command_run(args: argparse.Namespace) -> int:
     return 0 if payload["score"]["value"] >= 70 else 2
 
 
+def command_doctor(args: argparse.Namespace) -> int:
+    result = run_local(Path(args.path), websites=args.website)
+    payload = result.to_dict()
+    score = payload["score"]
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Doctor")
+        print("================")
+        print(f"Score: {score['value']}/100 ({score['grade']})")
+        print(f"Findings: {score['findings']}")
+        print(f"Action: {score['action']}")
+        print("")
+        if payload["findings"]:
+            print("Top findings:")
+            for finding in payload["findings"][:8]:
+                print(f"- [{finding['severity'].upper()}] {finding['type']} at {finding['target']}")
+                print(f"  {finding['recommendation']}")
+        else:
+            print("No project signals detected.")
+        print("")
+        print(f"Report: {payload['report_path']}")
+        print("Dashboard: subreparo-immune dashboard")
+    return 0 if score["value"] >= 70 else 2
+
+
+def command_review(args: argparse.Namespace) -> int:
+    results = run_swarm(Path(args.path), websites=args.website)
+    findings = flatten(results)
+    score = calculate_score(findings)
+    payload = {
+        "score": score.to_dict(),
+        "analyzers": [result.to_dict() for result in results],
+        "findings": [finding.to_dict() for finding in findings],
+    }
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Review")
+        print("================")
+        print(f"Score: {score.value}/100 ({score.grade})")
+        print(f"Findings: {score.findings}")
+        for result in results:
+            print(f"- {result.analyzer}: {len(result.findings)} finding(s)")
+    return 0 if score.value >= 70 else 2
+
+
+def command_dashboard(args: argparse.Namespace) -> int:
+    serve(host=args.host, port=args.port)
+    return 0
+
+
 def command_init(args: argparse.Namespace) -> int:
     root = Path(args.path)
     state = root / ".subreparo"
@@ -57,6 +126,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "run":
         return command_run(args)
+    if args.command == "doctor":
+        return command_doctor(args)
+    if args.command == "review":
+        return command_review(args)
+    if args.command == "dashboard":
+        return command_dashboard(args)
     if args.command == "init":
         return command_init(args)
     parser.error(f"Unknown command: {args.command}")
