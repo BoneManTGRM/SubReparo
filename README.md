@@ -28,8 +28,9 @@ Cybersecurity is one protection module. The larger product is self-healing infra
 
 ```text
 SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, reports
+SubReparo Cortex     -> planning, approval queue, status report, memory, safe work loop
 SubReparo Repair     -> repair planning, verification, timeline, audit, learning memory
-SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles
+SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles, quality gates
 SubReparo Chain      -> Polkadot SDK / FRAME repair-ledger memory
 ```
 
@@ -106,6 +107,9 @@ subreparo/docs/REPARODYNAMICS.md
 - dependency manifest review, dependency inventory, and firewall suggestions;
 - quarantine staging and restore controls;
 - policy allowlist/blocklist/ignore-target management;
+- Cortex planning, memory, approval queue, status report, and outcome records;
+- safe project snapshots before high-risk work;
+- quality gate command and CI smoke tests;
 - git working-tree review;
 - website response check;
 - score and markdown report;
@@ -150,6 +154,7 @@ subreparo-immune doctor .
 subreparo-immune patrol .
 subreparo-immune baseline .
 subreparo-immune diff .
+subreparo-immune quality .
 subreparo-monitor . --once
 ```
 
@@ -171,7 +176,13 @@ subreparo-immune firewall .
 subreparo-immune bundle .
 subreparo-immune audit .
 subreparo-immune rules
+subreparo-immune quality . --json
 subreparo-immune dashboard
+subreparo-cortex . --plan --json
+subreparo-cortex . --next --json
+subreparo-cortex . --memory --json
+subreparo-cortex . --approvals --json
+subreparo-cortex . --status --json
 ```
 
 Outputs:
@@ -182,6 +193,12 @@ Outputs:
 .subreparo/chain_export.json
 .subreparo/quarantine_manifest.jsonl
 .subreparo/audit.jsonl
+.subreparo/cortex_memory.jsonl
+.subreparo/cortex_tasks.jsonl
+.subreparo/approval_queue.jsonl
+.subreparo/outcome_records.jsonl
+.subreparo/quality_report.json
+.subreparo/snapshots/
 ```
 
 ## Chain target
