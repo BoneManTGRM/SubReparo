@@ -7,11 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from .baseline import compare
+from .browser_scan import scan_browser_extensions
 from .detectors import check_website, scan_git, scan_project, write_json
 from .immune_patrol import patrol
 from .models import Finding, Severity
+from .policy import apply_policy, load_policy
 from .reparodynamics import finding_signal, score_repair
 from .scoring import calculate_score
+from .shortcut_scan import scan_shortcuts
+from .startup_scan import scan_startup
 
 STATE_DIR = Path(".subreparo")
 REPORT_PATH = STATE_DIR / "report.md"
@@ -52,7 +56,17 @@ class EngineResult:
 
 def run_local(project_path: Path, websites: list[str] | None = None) -> EngineResult:
     project_path = project_path.resolve()
-    findings = scan_project(project_path) + patrol(project_path) + compare(project_path) + scan_git(project_path)
+    findings = (
+        scan_project(project_path)
+        + patrol(project_path)
+        + compare(project_path)
+        + scan_startup(project_path)
+        + scan_browser_extensions(project_path)
+        + scan_shortcuts(project_path)
+        + scan_git(project_path)
+    )
+    policy = load_policy(project_path / ".subreparo" / "policy.json")
+    findings = apply_policy(findings, policy)
     for url in websites or []:
         findings.extend(check_website(url))
     result = EngineResult(
