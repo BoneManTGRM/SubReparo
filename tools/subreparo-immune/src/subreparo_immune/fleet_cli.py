@@ -8,7 +8,10 @@ from .fleet_dashboard import build_fleet_dashboard, write_fleet_dashboard
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="subreparo-fleet", description="Show local SubReparo fleet dashboard scaffold.")
+    parser = argparse.ArgumentParser(
+        prog="subreparo-fleet",
+        description="Show local SubReparo fleet dashboard scaffold.",
+    )
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--write-dashboard", action="store_true")
     parser.add_argument("--json", action="store_true")
