@@ -12,6 +12,9 @@ from .cortex_models import CortexTaskStatus
 from .cortex_planner import next_ready_task, propose_initial_tasks
 from .cortex_policy import classify_task
 from .status_report import build_status_report
+from .swarm_roles import swarm_role_catalog
+from .swarm_router import route_swarm_task
+from .swarm_tools import swarm_tool_catalog
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,6 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--approvals", action="store_true", help="Show pending approval requests.")
     parser.add_argument("--status", action="store_true", help="Show Cortex status report.")
     parser.add_argument("--components", action="store_true", help="Show AI agent component readiness.")
+    parser.add_argument("--swarm", action="store_true", help="Show swarm roles and tools.")
+    parser.add_argument("--route", help="Route a task through the swarm planner.")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -66,9 +71,13 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_status_report(root)
     elif args.components:
         payload = build_agent_component_report(root)
+    elif args.swarm:
+        payload = {"roles": swarm_role_catalog(), "tools": swarm_tool_catalog()}
+    elif args.route:
+        payload = {"route": route_swarm_task(args.route).to_dict()}
     else:
         payload = {
-            "message": "Use --plan, --next, --memory, --approvals, --status, or --components.",
+            "message": "Use --plan, --next, --memory, --approvals, --status, --components, --swarm, or --route.",
             "commands": [
                 "subreparo-cortex . --plan",
                 "subreparo-cortex . --next",
@@ -76,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
                 "subreparo-cortex . --approvals",
                 "subreparo-cortex . --status",
                 "subreparo-cortex . --components",
+                "subreparo-cortex . --swarm",
+                "subreparo-cortex . --route 'run quality checks'",
             ],
         }
 
