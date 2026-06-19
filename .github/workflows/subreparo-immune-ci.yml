@@ -57,3 +57,6 @@ jobs:
           subreparo-cortex "$tmpdir" --next --json
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
+
+      - name: Run SubReparo quality gate
+        run: subreparo-immune quality . --json
