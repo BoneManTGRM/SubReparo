@@ -15,10 +15,15 @@ python -m pip install -e .
 
 ```bash
 subreparo-immune init .
+subreparo-immune setup . --mode simple
 subreparo-immune run .
 subreparo-immune run . --json
 subreparo-immune run . --website https://example.com
+subreparo-immune feedback . --false-positive src/app.py --reason "known safe"
+subreparo-immune trust . --json
+subreparo-immune watch-plan . --json
 subreparo-immune quality . --json
+subreparo-immune sign-report . --json
 subreparo-cortex . --status --json
 subreparo-cortex . --components --json
 subreparo-immune dashboard
@@ -30,6 +35,10 @@ subreparo-immune dashboard
 .subreparo/report.md
 .subreparo/repair_ledger.jsonl
 .subreparo/chain_export.json
+.subreparo/feedback.json
+.subreparo/trust_report.json
+.subreparo/setup_profile.json
+.subreparo/report_signature.json
 .subreparo/cortex_memory.jsonl
 .subreparo/cortex_tasks.jsonl
 .subreparo/approval_queue.jsonl
@@ -45,6 +54,11 @@ subreparo-immune dashboard
 - dependency manifest review;
 - git working-tree review;
 - website response check;
+- false-positive feedback;
+- file, folder, and domain trust scoring;
+- first-run setup profile;
+- watcher backend planning;
+- local report integrity signatures;
 - project score and markdown report;
 - digest/export payload for future chain bridge.
 
@@ -70,13 +84,17 @@ subreparo-cortex . --components --json
 
 ## Cortex dashboard visibility
 
-The local dashboard now surfaces the Cortex operator layer:
+The local dashboard now surfaces the Cortex operator layer and protection state:
 
 - task count;
 - memory count;
 - pending approval count;
 - outcome count;
 - AI agent component readiness;
+- false-positive feedback;
+- trust report;
+- watch plan;
+- report signature;
 - quality gate report;
 - latest snapshot manifest;
 - pending approval reasons.
