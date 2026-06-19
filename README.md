@@ -137,10 +137,11 @@ subreparo/docs/REPARODYNAMICS.md
 - policy allowlist/blocklist/ignore-target management;
 - false-positive feedback records;
 - file, folder, and domain trust scoring;
+- trust scores in markdown reports, append-only ledger records, and chain export payloads;
 - first-run setup profile;
 - watcher backend and target planning with native-watchdog detection and polling fallback;
 - local report integrity signatures with optional HMAC key support;
-- Cortex planning, memory, approval queue, status report, and outcome records;
+- Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
 - safe project snapshots before high-risk work;
 - quality gate command and CI smoke tests;
@@ -227,6 +228,10 @@ subreparo-cortex . --memory --json
 subreparo-cortex . --approvals --json
 subreparo-cortex . --status --json
 subreparo-cortex . --components --json
+subreparo-cortex . --swarm --json
+subreparo-cortex . --route 'run quality checks' --json
+subreparo-cortex . --orchestrate 'run quality checks' --json
+subreparo-cortex . --plans --json
 ```
 
 Outputs:
