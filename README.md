@@ -14,6 +14,31 @@ It is an adaptive repair and resilience layer:
 observe -> detect -> explain -> isolate -> repair -> verify -> remember -> improve
 ```
 
+## Start the Control Center
+
+macOS / Linux:
+
+```bash
+bash scripts/start-subreparo-control-center.sh
+```
+
+Manual:
+
+```bash
+cd tools/subreparo-immune
+python -m pip install -e .
+cd ../..
+subreparo-immune dashboard
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
+Details: `subreparo/docs/CONTROL_CENTER_LAUNCH.md`.
+
 ## Best direction
 
 The strongest path is broader than cybersecurity:
@@ -185,6 +210,7 @@ subreparo/docs/REPARODYNAMICS.md
 - Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
 - Immune agent core for observe/detect/plan/verify cycles, scar memory, and proof export;
+- local Control Center launcher and launch docs;
 - desktop application vision and control-center roadmap;
 - safe project snapshots before high-risk work;
 - quality gate command and CI smoke tests;
