@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .detectors import check_website, scan_git, scan_project, write_json
+from .immune_patrol import patrol
 from .models import Finding, Severity
 from .reparodynamics import finding_signal, score_repair
 from .scoring import calculate_score
@@ -50,7 +51,7 @@ class EngineResult:
 
 def run_local(project_path: Path, websites: list[str] | None = None) -> EngineResult:
     project_path = project_path.resolve()
-    findings = scan_project(project_path) + scan_git(project_path)
+    findings = scan_project(project_path) + patrol(project_path) + scan_git(project_path)
     for url in websites or []:
         findings.extend(check_website(url))
     result = EngineResult(
