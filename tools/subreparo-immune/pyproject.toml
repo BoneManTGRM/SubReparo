@@ -38,6 +38,7 @@ subreparo-modes = "subreparo_immune.modes_cli:main"
 subreparo-quarantine = "subreparo_immune.quarantine_cli:main"
 subreparo-cortex = "subreparo_immune.cortex_cli:main"
 subreparo-hash-lookup = "subreparo_immune.hash_lookup_cli:main"
+subreparo-learning = "subreparo_immune.learning_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
