@@ -31,6 +31,11 @@ subreparo-cortex . --swarm --json
 subreparo-cortex . --route 'run quality checks' --json
 subreparo-cortex . --orchestrate 'run quality checks' --json
 subreparo-cortex . --plans --json
+subreparo-alerts . --json
+subreparo-tray . --json
+subreparo-installer . --json
+subreparo-updater . --json
+subreparo-fleet . --json
 subreparo-immune dashboard
 ```
 
@@ -44,6 +49,11 @@ subreparo-immune dashboard
 .subreparo/trust_report.json
 .subreparo/setup_profile.json
 .subreparo/report_signature.json
+.subreparo/native_alerts.jsonl
+.subreparo/tray_manifest.json
+.subreparo/installer_manifest.json
+.subreparo/update_plan.json
+.subreparo/fleet_dashboard.json
 .subreparo/cortex_memory.jsonl
 .subreparo/cortex_tasks.jsonl
 .subreparo/approval_queue.jsonl
@@ -64,6 +74,11 @@ subreparo-immune dashboard
 - trust scoring in reports, append-only ledgers, and chain export payloads;
 - first-run setup profile;
 - watcher backend planning;
+- local alert planning;
+- desktop tray manifest;
+- Windows, macOS, and Linux installer manifests;
+- dry-run update plan;
+- local fleet dashboard manifest;
 - local report integrity signatures;
 - project score and markdown report;
 - digest/export payload for future chain bridge.
@@ -87,6 +102,21 @@ Command:
 ```bash
 subreparo-cortex . --components --json
 ```
+
+## Platform completion commands
+
+The final platform scaffold commands are local-first and preview-oriented:
+
+```bash
+subreparo-alerts . --json
+subreparo-alerts . --write-inbox --json
+subreparo-tray . --write-manifest --json
+subreparo-installer . --write-manifest --json
+subreparo-updater . --write-plan --json
+subreparo-fleet . --write-dashboard --json
+```
+
+See `subreparo/docs/PLATFORM_COMPLETION.md`.
 
 ## Cortex dashboard visibility
 
