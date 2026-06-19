@@ -20,6 +20,7 @@ subreparo-immune run . --json
 subreparo-immune run . --website https://example.com
 subreparo-immune quality . --json
 subreparo-cortex . --status --json
+subreparo-cortex . --components --json
 subreparo-immune dashboard
 ```
 
@@ -47,6 +48,26 @@ subreparo-immune dashboard
 - project score and markdown report;
 - digest/export payload for future chain bridge.
 
+## Cortex AI-agent components
+
+The Cortex layer now exposes the five AI-agent components:
+
+1. LLM brain
+2. Prompting and instructions
+3. Memory
+4. External knowledge
+5. Tools
+
+The local registry also tracks the three minimum ingredients: external knowledge, tools, and prompting.
+
+The LLM brain is registered but not connected by default. A live model connector should require explicit configuration and approval before any private project context leaves the machine.
+
+Command:
+
+```bash
+subreparo-cortex . --components --json
+```
+
 ## Cortex dashboard visibility
 
 The local dashboard now surfaces the Cortex operator layer:
@@ -55,6 +76,7 @@ The local dashboard now surfaces the Cortex operator layer:
 - memory count;
 - pending approval count;
 - outcome count;
+- AI agent component readiness;
 - quality gate report;
 - latest snapshot manifest;
 - pending approval reasons.
