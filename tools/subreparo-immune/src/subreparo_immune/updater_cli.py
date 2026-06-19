@@ -8,7 +8,10 @@ from .updater import build_update_plan, write_update_plan
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="subreparo-updater", description="Show SubReparo update plan scaffold.")
+    parser = argparse.ArgumentParser(
+        prog="subreparo-updater",
+        description="Show SubReparo update plan scaffold.",
+    )
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--target-version")
     parser.add_argument("--write-plan", action="store_true")
