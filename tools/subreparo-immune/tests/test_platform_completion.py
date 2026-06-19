@@ -16,8 +16,9 @@ from subreparo_immune.updater_cli import main as updater_main
 def test_native_alert_report_builds_from_watch_alerts(tmp_path: Path) -> None:
     state = tmp_path / ".subreparo"
     state.mkdir()
+    event = {"severity": "high", "event_type": "created", "path": "Downloads/item"}
     (state / "watch_alerts.jsonl").write_text(
-        json.dumps({"severity": "high", "event_type": "created", "path": "Downloads/item"}) + "\n",
+        json.dumps(event) + "\n",
         encoding="utf-8",
     )
 
