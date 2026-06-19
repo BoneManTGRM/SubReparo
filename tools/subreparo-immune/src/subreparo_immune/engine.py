@@ -18,6 +18,7 @@ from .network_scan import scan_network
 from .policy import apply_policy, load_policy
 from .process_scan import scan_processes
 from .redaction import redact_mapping, redact_text
+from .registry_scan import scan_registry_startup as scan_autorun_entries
 from .reparodynamics import finding_signal, score_repair
 from .scheduled_task_scan import scan_scheduled_tasks
 from .scoring import calculate_score
@@ -80,6 +81,7 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
         + compare(project_path)
         + scan_startup(project_path)
         + scan_scheduled_tasks(project_path)
+        + scan_autorun_entries(project_path)
         + scan_browser_extensions(project_path)
         + scan_shortcuts(project_path)
         + scan_processes()
