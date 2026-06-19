@@ -45,6 +45,11 @@ subreparo-learning = "subreparo_immune.learning_cli:main"
 subreparo-immune-agent = "subreparo_immune.immune_agent_cli:main"
 subreparo-pdf-report = "subreparo_immune.pdf_report_cli:main"
 subreparo-launch-check = "subreparo_immune.launch_check_cli:main"
+subreparo-alerts = "subreparo_immune.alerts_cli:main"
+subreparo-tray = "subreparo_immune.tray_cli:main"
+subreparo-installer = "subreparo_immune.installer_cli:main"
+subreparo-updater = "subreparo_immune.updater_cli:main"
+subreparo-fleet = "subreparo_immune.fleet_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
