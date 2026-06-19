@@ -11,6 +11,7 @@ from .cortex_memory import append_memory, append_task, read_memory, read_tasks
 from .cortex_models import CortexTaskStatus
 from .cortex_planner import next_ready_task, propose_initial_tasks
 from .cortex_policy import classify_task
+from .messaging_connectors import messaging_status
 from .status_report import build_status_report
 from .swarm_orchestrator import list_swarm_plans, orchestrate_swarm
 from .swarm_roles import swarm_role_catalog
@@ -31,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--route", help="Route a task through the swarm planner.")
     parser.add_argument("--orchestrate", help="Build and save a swarm plan for a goal.")
     parser.add_argument("--plans", action="store_true", help="Show saved swarm plans.")
+    parser.add_argument("--messaging", action="store_true", help="Show Telegram/WhatsApp connector readiness.")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -82,9 +84,11 @@ def main(argv: list[str] | None = None) -> int:
         payload = orchestrate_swarm(root, args.orchestrate)
     elif args.plans:
         payload = {"plans": list_swarm_plans(root)}
+    elif args.messaging:
+        payload = messaging_status()
     else:
         payload = {
-            "message": "Use --plan, --next, --memory, --approvals, --status, --components, --swarm, --route, --orchestrate, or --plans.",
+            "message": "Use --plan, --next, --memory, --approvals, --status, --components, --swarm, --route, --orchestrate, --plans, or --messaging.",
             "commands": [
                 "subreparo-cortex . --plan",
                 "subreparo-cortex . --next",
@@ -96,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
                 "subreparo-cortex . --route 'run quality checks'",
                 "subreparo-cortex . --orchestrate 'run quality checks'",
                 "subreparo-cortex . --plans",
+                "subreparo-cortex . --messaging",
             ],
         }
 
