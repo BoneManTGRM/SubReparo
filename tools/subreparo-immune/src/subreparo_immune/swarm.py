@@ -4,9 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from .browser_scan import scan_browser_extensions
 from .detectors import check_website, scan_git, scan_project
 from .immune_patrol import patrol
 from .models import Finding, FindingType, Severity
+from .shortcut_scan import scan_shortcuts
+from .startup_scan import scan_startup
 
 
 class Analyzer(Protocol):
@@ -40,6 +43,27 @@ class ImmunePatrolAnalyzer:
 
     def run(self, root: Path, websites: list[str]) -> list[Finding]:
         return patrol(root)
+
+
+class StartupAnalyzer:
+    name = "startup"
+
+    def run(self, root: Path, websites: list[str]) -> list[Finding]:
+        return scan_startup(root)
+
+
+class BrowserAnalyzer:
+    name = "browser-extensions"
+
+    def run(self, root: Path, websites: list[str]) -> list[Finding]:
+        return scan_browser_extensions(root)
+
+
+class ShortcutAnalyzer:
+    name = "launchers"
+
+    def run(self, root: Path, websites: list[str]) -> list[Finding]:
+        return scan_shortcuts(root)
 
 
 class GitAnalyzer:
@@ -84,6 +108,9 @@ class ProductReadinessAnalyzer:
 ANALYZERS: list[Analyzer] = [
     ProjectAnalyzer(),
     ImmunePatrolAnalyzer(),
+    StartupAnalyzer(),
+    BrowserAnalyzer(),
+    ShortcutAnalyzer(),
     GitAnalyzer(),
     WebsiteAnalyzer(),
     ProductReadinessAnalyzer(),
