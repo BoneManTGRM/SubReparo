@@ -27,7 +27,7 @@ Cybersecurity is one protection module. The larger product is self-healing infra
 ## Architecture
 
 ```text
-SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, reports
+SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, reports, agent core
 SubReparo Cortex     -> planning, approval queue, status report, memory, safe work loop
 SubReparo Repair     -> repair planning, verification, timeline, audit, learning memory
 SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles, quality gates
@@ -82,6 +82,26 @@ subreparo-cortex . --components --json
 ```
 
 Details: `subreparo/docs/AGENT_COMPONENTS.md`.
+
+## Immune agent core
+
+SubReparo Immune now has a Python-first agent-core prototype:
+
+```text
+observe -> detect -> plan -> repair -> verify
+```
+
+It records scar memory, cycle records, outcome records, swarm plans, and proof exports for later chain submission.
+
+```bash
+subreparo-immune-agent . --cycle "project health review" --json
+subreparo-immune-agent . --scars --json
+subreparo-immune-agent . --proof --json
+subreparo-immune-agent . --write-proof --json
+subreparo-immune-agent . --bot-backend "project health review" --json
+```
+
+Details: `subreparo/docs/IMMUNE_AGENT_CORE.md`.
 
 ## Full SDK foundation
 
@@ -164,6 +184,7 @@ subreparo/docs/REPARODYNAMICS.md
 - local report integrity signatures with optional HMAC key support;
 - Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
+- Immune agent core for observe/detect/plan/verify cycles, scar memory, and proof export;
 - desktop application vision and control-center roadmap;
 - safe project snapshots before high-risk work;
 - quality gate command and CI smoke tests;
@@ -254,6 +275,11 @@ subreparo-cortex . --swarm --json
 subreparo-cortex . --route 'run quality checks' --json
 subreparo-cortex . --orchestrate 'run quality checks' --json
 subreparo-cortex . --plans --json
+subreparo-immune-agent . --cycle 'project health review' --json
+subreparo-immune-agent . --scars --json
+subreparo-immune-agent . --proof --json
+subreparo-immune-agent . --write-proof --json
+subreparo-immune-agent . --bot-backend 'project health review' --json
 ```
 
 Outputs:
@@ -272,6 +298,9 @@ Outputs:
 .subreparo/cortex_tasks.jsonl
 .subreparo/approval_queue.jsonl
 .subreparo/outcome_records.jsonl
+.subreparo/agent_cycles.jsonl
+.subreparo/agent_scars.jsonl
+.subreparo/agent_proof_export.json
 .subreparo/quality_report.json
 .subreparo/snapshots/
 ```
@@ -283,6 +312,11 @@ Outputs:
         -> submit_repair_event
         -> pallet-reparodynamics
         -> SubReparo repair ledger
+
+.subreparo/agent_proof_export.json
+        -> submit_agent_proof
+        -> pallet-reparodynamics
+        -> shared agent proof state
 ```
 
 ## Private data rule
