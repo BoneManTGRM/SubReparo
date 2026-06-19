@@ -14,7 +14,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--limit", type=int, default=10)
-    parser.add_argument("--write-inbox", action="store_true", help="Save previewed alert plans in local state.")
+    parser.add_argument("--write-inbox", action="store_true", help="Store local records.")
     parser.add_argument("--json", action="store_true")
     return parser
 
