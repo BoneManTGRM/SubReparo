@@ -47,12 +47,18 @@ jobs:
       - name: Smoke test core commands
         run: |
           subreparo-immune init .
+          subreparo-immune setup . --mode developer --watch src --json
           subreparo-immune run . --json
+          subreparo-immune feedback . --false-positive ci/example.py --reason "CI sample" --json
+          subreparo-immune trust . --json
+          subreparo-immune watch-plan . --json
           subreparo-immune rules --json
           subreparo-immune inventory . --json
           subreparo-immune trends . --json
           subreparo-immune timeline . --json
           subreparo-immune quality . --json
+          subreparo-immune sign-report . --json
+          subreparo-immune sign-report . --verify --json
           subreparo-cortex . --plan --json
           subreparo-cortex . --next --json
           subreparo-cortex . --status --json
