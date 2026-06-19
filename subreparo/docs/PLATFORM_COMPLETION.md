@@ -10,9 +10,9 @@ This layer closes the remaining 100-point product roadmap items without adding d
 
 `subreparo-alerts . --json` converts local watcher records into local alert plans. Alert plans are preview-first and can be saved to `.subreparo/native_alerts.jsonl` with `--write-inbox`.
 
-## Installer packaging layer
+## Package manifest layer
 
-`subreparo-installer . --json` returns Windows, macOS, and Linux packaging metadata for the existing local install helpers and console entry points. It is a package manifest, not a public release action.
+`subreparo-installer . --json` returns Windows, macOS, and Linux package metadata for the existing local helpers and console entry points.
 
 ## Update plan layer
 
@@ -26,6 +26,4 @@ This layer closes the remaining 100-point product roadmap items without adding d
 
 - Local-first by default.
 - No raw private file content in fleet summaries.
-- No public package publishing from the scaffold.
-- No automatic replacement of a running installation.
-- High-impact release and update actions require manual approval.
+- Release and update actions require manual approval.
