@@ -36,7 +36,11 @@ def read_jsonl(path: Path, *, limit: int | None = None) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     rows: list[dict[str, Any]] = []
-    lines = [line for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip()]
+    lines = [
+        line
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
+        if line.strip()
+    ]
     selected = lines[-limit:] if limit is not None else lines
     for line in selected:
         try:
@@ -65,7 +69,11 @@ def alert_from_event(event: dict[str, Any]) -> NativeAlertPlan:
     severity = str(event.get("severity") or "info")
     event_type = str(event.get("type") or event.get("event_type") or "local_alert")
     target = str(event.get("target") or event.get("path") or "local")
-    message = str(event.get("message") or event.get("recommendation") or f"{event_type} observed at {target}")
+    message = str(
+        event.get("message")
+        or event.get("recommendation")
+        or f"{event_type} observed at {target}"
+    )
     title = f"SubReparo {severity.upper()} alert"
     return NativeAlertPlan(
         title=title,
