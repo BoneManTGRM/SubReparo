@@ -39,5 +39,8 @@ def write_update_plan(root: Path, target_version: str | None = None) -> Path:
     root = root.resolve()
     path = root / UPDATE_PLAN
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(build_update_plan(target_version), indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(
+        json.dumps(build_update_plan(target_version), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     return path
