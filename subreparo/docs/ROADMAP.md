@@ -8,10 +8,11 @@ The product is intentionally local-first. The chain should prove and remember ve
 
 ## Latest completed platform batch
 
-- Added dashboard visibility for Cortex tasks, memory, approvals, outcomes, quality reports, and snapshots.
-- Added dashboard tests for Cortex metrics, approval rendering, and snapshot manifest rendering.
-- Expanded CI smoke coverage for `subreparo-cortex` status, plan, next-task, and approval commands.
-- Kept the batch local, defensive, and reviewable.
+- Added an explicit Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools.
+- Added `subreparo-cortex . --components --json` to report registered and operational agent components.
+- Added dashboard visibility for AI-agent component readiness beside Cortex task, memory, approval, outcome, quality, and snapshot state.
+- Added tests and CI smoke coverage for the component readiness command and dashboard panel.
+- Documented the safety boundary: the LLM brain is registered but not externally connected by default.
 
 ## Phase 1: Local-first MVP
 
