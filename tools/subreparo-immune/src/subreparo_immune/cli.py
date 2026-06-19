@@ -14,6 +14,7 @@ from .immune_patrol import patrol
 from .inventory import dependency_inventory
 from .models import Severity
 from .policy import add_allowed_hash, add_blocked_hash, add_ignored_target, initialize_policy, load_policy
+from .quality import run_quality
 from .quarantine import list_records, restore_all, restore_record, stage_file
 from .rules import rule_catalog
 from .scoring import calculate_score
@@ -98,6 +99,10 @@ def build_parser() -> argparse.ArgumentParser:
     review_parser.add_argument("path", nargs="?", default=".")
     review_parser.add_argument("--website", action="append", default=[])
     review_parser.add_argument("--json", action="store_true")
+
+    quality_parser = subparsers.add_parser("quality", help="Run local compile and test quality gates.")
+    quality_parser.add_argument("path", nargs="?", default=".")
+    quality_parser.add_argument("--json", action="store_true")
 
     dashboard_parser = subparsers.add_parser("dashboard", help="Start the local dashboard.")
     dashboard_parser.add_argument("--host", default="127.0.0.1")
@@ -374,6 +379,26 @@ def command_review(args: argparse.Namespace) -> int:
     return 0 if score.value >= 70 else 2
 
 
+def command_quality(args: argparse.Namespace) -> int:
+    payload = run_quality(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Quality Gate")
+        print("======================")
+        print("PASS" if payload["passed"] else "FAIL")
+        for check in payload["checks"]:
+            status = "PASS" if check["passed"] else "FAIL"
+            print(f"- {status}: {check['name']}")
+            if not check["passed"]:
+                if check.get("stdout"):
+                    print(check["stdout"])
+                if check.get("stderr"):
+                    print(check["stderr"])
+        print("Report: .subreparo/quality_report.json")
+    return 0 if payload["passed"] else 2
+
+
 def command_dashboard(args: argparse.Namespace) -> int:
     serve(host=args.host, port=args.port)
     return 0
@@ -426,6 +451,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_rules(args)
     if args.command == "review":
         return command_review(args)
+    if args.command == "quality":
+        return command_quality(args)
     if args.command == "dashboard":
         return command_dashboard(args)
     if args.command == "init":
