@@ -1,0 +1,50 @@
+name: SubReparo Immune
+
+on:
+  pull_request:
+    paths:
+      - "tools/subreparo-immune/**"
+      - ".github/workflows/subreparo-immune.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/subreparo-immune/**"
+      - ".github/workflows/subreparo-immune.yml"
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/subreparo-immune
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest mypy ruff build
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Type check
+        run: mypy src
+
+      - name: Tests
+        run: pytest
+
+      - name: Build package
+        run: python -m build
+
+      - name: Smoke test
+        run: |
+          subreparo-immune init .
+          subreparo-immune run . --json
