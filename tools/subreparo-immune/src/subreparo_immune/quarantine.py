@@ -72,3 +72,45 @@ def list_records(state_dir: Path) -> list[QuarantineRecord]:
         if line.strip():
             records.append(QuarantineRecord(**json.loads(line)))
     return records
+
+
+def restore_record(root: Path, index: int, state_dir: Path | None = None) -> QuarantineRecord:
+    root = root.resolve()
+    state = (state_dir or root / ".subreparo").resolve()
+    records = list_records(state)
+    if index < 0 or index >= len(records):
+        raise IndexError("Quarantine index out of range.")
+
+    record = records[index]
+    staged = Path(record.staged_path).resolve()
+    original = Path(record.original_path).resolve()
+
+    try:
+        staged.relative_to(state)
+    except ValueError as exc:
+        raise ValueError("Refusing to restore a staged file outside SubReparo state.") from exc
+
+    try:
+        original.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("Refusing to restore outside the selected root.") from exc
+
+    if not staged.exists() or not staged.is_file():
+        raise FileNotFoundError(str(staged))
+    if original.exists():
+        raise FileExistsError(f"Restore target already exists: {original}")
+
+    original.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(staged), str(original))
+    return record
+
+
+def restore_all(root: Path, state_dir: Path | None = None) -> list[QuarantineRecord]:
+    restored: list[QuarantineRecord] = []
+    state = state_dir or root.resolve() / ".subreparo"
+    for index, _record in enumerate(list_records(state)):
+        try:
+            restored.append(restore_record(root, index, state_dir=state))
+        except (FileExistsError, FileNotFoundError, ValueError):
+            continue
+    return restored
