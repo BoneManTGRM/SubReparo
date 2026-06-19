@@ -52,6 +52,11 @@ jobs:
           subreparo-immune inventory . --json
           subreparo-immune trends . --json
           subreparo-immune timeline . --json
+          subreparo-immune quality . --json
+          subreparo-cortex . --plan --json
+          subreparo-cortex . --next --json
+          subreparo-cortex . --status --json
+          subreparo-cortex . --approvals --json
           subreparo-sbom . --json
           subreparo-modes --json
           subreparo-quarantine . --json
