@@ -24,8 +24,13 @@ subreparo-immune trust . --json
 subreparo-immune watch-plan . --json
 subreparo-immune quality . --json
 subreparo-immune sign-report . --json
+subreparo-immune sign-report . --verify --json
 subreparo-cortex . --status --json
 subreparo-cortex . --components --json
+subreparo-cortex . --swarm --json
+subreparo-cortex . --route 'run quality checks' --json
+subreparo-cortex . --orchestrate 'run quality checks' --json
+subreparo-cortex . --plans --json
 subreparo-immune dashboard
 ```
 
@@ -54,8 +59,9 @@ subreparo-immune dashboard
 - dependency manifest review;
 - git working-tree review;
 - website response check;
-- false-positive feedback;
+- false-positive feedback suppression;
 - file, folder, and domain trust scoring;
+- trust scoring in reports, append-only ledgers, and chain export payloads;
 - first-run setup profile;
 - watcher backend planning;
 - local report integrity signatures;
@@ -64,7 +70,7 @@ subreparo-immune dashboard
 
 ## Cortex AI-agent components
 
-The Cortex layer now exposes the five AI-agent components:
+The Cortex layer exposes the five AI-agent components:
 
 1. LLM brain
 2. Prompting and instructions
@@ -84,7 +90,7 @@ subreparo-cortex . --components --json
 
 ## Cortex dashboard visibility
 
-The local dashboard now surfaces the Cortex operator layer and protection state:
+The local dashboard surfaces the Cortex operator layer and protection state:
 
 - task count;
 - memory count;
