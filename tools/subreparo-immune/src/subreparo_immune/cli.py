@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .baseline import compare, write_baseline
 from .dashboard import serve
 from .engine import run_local
 from .immune_patrol import patrol
@@ -33,6 +34,13 @@ def build_parser() -> argparse.ArgumentParser:
     patrol_parser = subparsers.add_parser("patrol", help="Inspect local files for suspicious immune signals.")
     patrol_parser.add_argument("path", nargs="?", default=".")
     patrol_parser.add_argument("--json", action="store_true")
+
+    baseline_parser = subparsers.add_parser("baseline", help="Create a local integrity baseline.")
+    baseline_parser.add_argument("path", nargs="?", default=".")
+
+    diff_parser = subparsers.add_parser("diff", help="Compare current files against the local baseline.")
+    diff_parser.add_argument("path", nargs="?", default=".")
+    diff_parser.add_argument("--json", action="store_true")
 
     isolate_parser = subparsers.add_parser("isolate", help="Move high-risk local findings into SubReparo staging.")
     isolate_parser.add_argument("path", nargs="?", default=".")
@@ -103,6 +111,29 @@ def command_patrol(args: argparse.Namespace) -> int:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
         print("SubReparo Immune Patrol")
+        print("=======================")
+        print(f"Score: {score.value}/100 ({score.grade})")
+        print(f"Findings: {score.findings}")
+        for finding in findings[:12]:
+            print(f"- [{finding.severity.value.upper()}] {finding.message} at {finding.target}")
+            print(f"  {finding.recommendation}")
+    return 0 if score.value >= 70 else 2
+
+
+def command_baseline(args: argparse.Namespace) -> int:
+    path = write_baseline(Path(args.path))
+    print(f"SubReparo baseline saved at {path}")
+    return 0
+
+
+def command_diff(args: argparse.Namespace) -> int:
+    findings = compare(Path(args.path))
+    score = calculate_score(findings)
+    payload = {"score": score.to_dict(), "findings": [finding.to_dict() for finding in findings]}
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Baseline Diff")
         print("=======================")
         print(f"Score: {score.value}/100 ({score.grade})")
         print(f"Findings: {score.findings}")
@@ -197,6 +228,10 @@ def main(argv: list[str] | None = None) -> int:
         return command_doctor(args)
     if args.command == "patrol":
         return command_patrol(args)
+    if args.command == "baseline":
+        return command_baseline(args)
+    if args.command == "diff":
+        return command_diff(args)
     if args.command == "isolate":
         return command_isolate(args)
     if args.command == "review":
