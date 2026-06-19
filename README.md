@@ -1,20 +1,36 @@
 # SubReparo
 
-SubReparo is a local-first repair-memory system for AI agents, software projects, websites, and autonomous infrastructure.
+SubReparo is a local-first adaptive repair platform for AI agents, software projects, endpoints, websites, and autonomous infrastructure.
 
 This repository is the clean private home for SubReparo. It is not a fork.
 
-## Core idea
+## Product position
+
+SubReparo is not only an antivirus and not only a scanner.
+
+It is an adaptive repair and resilience layer:
 
 ```text
-observe -> detect -> record -> repair -> verify -> remember -> learn -> improve
+observe -> detect -> explain -> isolate -> repair -> verify -> remember -> improve
 ```
+
+## Best direction
+
+The strongest path is broader than cybersecurity:
+
+```text
+SubReparo Adaptive Repair Platform
+```
+
+Cybersecurity is one protection module. The larger product is self-healing infrastructure for software, AI systems, developer machines, client environments, and future chain-backed repair memory.
 
 ## Architecture
 
 ```text
-SubReparo Immune  -> local-first engine, score, reports, ledger, export payload
-SubReparo Chain   -> Polkadot SDK / FRAME repair-ledger memory
+SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, reports
+SubReparo Repair     -> repair planning, verification, timeline, audit, learning memory
+SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles
+SubReparo Chain      -> Polkadot SDK / FRAME repair-ledger memory
 ```
 
 ## Full SDK foundation
@@ -55,9 +71,7 @@ sdk/polkadot-sdk/subreparo/docs
 
 ## Reparodynamics layer
 
-SubReparo is not only a scanner.
-
-It includes first-class Reparodynamics concepts:
+SubReparo includes first-class Reparodynamics concepts:
 
 ```text
 stress -> fracture -> repair -> verification -> scar memory -> adaptation
@@ -89,8 +103,8 @@ subreparo/docs/REPARODYNAMICS.md
 - project scanning;
 - defensive immune patrol for scripts, binaries, launchers, startup entries, browser extensions, runtime processes, and network signals;
 - baseline integrity memory and diffing;
-- dependency manifest review, dependency risk checks, and SBOM-style export;
-- quarantine staging, restore, and staged-file removal controls;
+- dependency manifest review, dependency inventory, and firewall suggestions;
+- quarantine staging and restore controls;
 - policy allowlist/blocklist/ignore-target management;
 - git working-tree review;
 - website response check;
@@ -99,6 +113,7 @@ subreparo/docs/REPARODYNAMICS.md
 - incident bundle export with privacy redaction;
 - hash-chained audit log;
 - local dashboard;
+- rule catalog and rule changelog;
 - Reparodynamics, TGRM, and RYE metrics;
 - local repair ledger;
 - chain export payload;
@@ -145,21 +160,17 @@ subreparo-immune run . --json
 subreparo-immune isolate .
 subreparo-immune isolate . --apply
 subreparo-immune quarantine .
-subreparo-quarantine . --restore-index 0
-subreparo-quarantine . --remove-index 0
+subreparo-immune quarantine . --restore-index 0
 subreparo-immune policy . --allow-hash <sha256>
 subreparo-immune policy . --block-hash <sha256>
 subreparo-immune policy . --ignore-target <target>
 subreparo-immune timeline .
 subreparo-immune trends .
 subreparo-immune inventory .
-subreparo-sbom . --json
-subreparo-sbom . --risk
 subreparo-immune firewall .
 subreparo-immune bundle .
 subreparo-immune audit .
 subreparo-immune rules
-subreparo-modes
 subreparo-immune dashboard
 ```
 
@@ -171,7 +182,6 @@ Outputs:
 .subreparo/chain_export.json
 .subreparo/quarantine_manifest.jsonl
 .subreparo/audit.jsonl
-.subreparo/sbom.json
 ```
 
 ## Chain target
