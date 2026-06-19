@@ -12,6 +12,7 @@ from .cortex_models import CortexTaskStatus
 from .cortex_planner import next_ready_task, propose_initial_tasks
 from .cortex_policy import classify_task
 from .status_report import build_status_report
+from .swarm_orchestrator import list_swarm_plans, orchestrate_swarm
 from .swarm_roles import swarm_role_catalog
 from .swarm_router import route_swarm_task
 from .swarm_tools import swarm_tool_catalog
@@ -28,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--components", action="store_true", help="Show AI agent component readiness.")
     parser.add_argument("--swarm", action="store_true", help="Show swarm roles and tools.")
     parser.add_argument("--route", help="Route a task through the swarm planner.")
+    parser.add_argument("--orchestrate", help="Build and save a swarm plan for a goal.")
+    parser.add_argument("--plans", action="store_true", help="Show saved swarm plans.")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -75,9 +78,13 @@ def main(argv: list[str] | None = None) -> int:
         payload = {"roles": swarm_role_catalog(), "tools": swarm_tool_catalog()}
     elif args.route:
         payload = {"route": route_swarm_task(args.route).to_dict()}
+    elif args.orchestrate:
+        payload = orchestrate_swarm(root, args.orchestrate)
+    elif args.plans:
+        payload = {"plans": list_swarm_plans(root)}
     else:
         payload = {
-            "message": "Use --plan, --next, --memory, --approvals, --status, --components, --swarm, or --route.",
+            "message": "Use --plan, --next, --memory, --approvals, --status, --components, --swarm, --route, --orchestrate, or --plans.",
             "commands": [
                 "subreparo-cortex . --plan",
                 "subreparo-cortex . --next",
@@ -87,6 +94,8 @@ def main(argv: list[str] | None = None) -> int:
                 "subreparo-cortex . --components",
                 "subreparo-cortex . --swarm",
                 "subreparo-cortex . --route 'run quality checks'",
+                "subreparo-cortex . --orchestrate 'run quality checks'",
+                "subreparo-cortex . --plans",
             ],
         }
 
