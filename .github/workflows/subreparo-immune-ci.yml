@@ -57,6 +57,9 @@ jobs:
           subreparo-cortex "$tmpdir" --next --json
           subreparo-cortex "$tmpdir" --approvals --json
           subreparo-cortex "$tmpdir" --status --json
+          subreparo-cortex "$tmpdir" --components --json
+          subreparo-cortex "$tmpdir" --swarm --json
+          subreparo-cortex "$tmpdir" --route "run quality checks" --json
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
           mkdir -p "$tmpdir/addons/docs"
