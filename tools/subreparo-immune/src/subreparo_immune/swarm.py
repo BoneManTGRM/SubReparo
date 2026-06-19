@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .detectors import check_website, scan_git, scan_project
+from .immune_patrol import patrol
 from .models import Finding, FindingType, Severity
 
 
@@ -32,6 +33,13 @@ class ProjectAnalyzer:
 
     def run(self, root: Path, websites: list[str]) -> list[Finding]:
         return scan_project(root)
+
+
+class ImmunePatrolAnalyzer:
+    name = "immune-patrol"
+
+    def run(self, root: Path, websites: list[str]) -> list[Finding]:
+        return patrol(root)
 
 
 class GitAnalyzer:
@@ -75,6 +83,7 @@ class ProductReadinessAnalyzer:
 
 ANALYZERS: list[Analyzer] = [
     ProjectAnalyzer(),
+    ImmunePatrolAnalyzer(),
     GitAnalyzer(),
     WebsiteAnalyzer(),
     ProductReadinessAnalyzer(),
