@@ -8,11 +8,14 @@ The product is intentionally local-first. The chain should prove and remember ve
 
 ## Latest completed platform batch
 
-- Added an explicit Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools.
-- Added `subreparo-cortex . --components --json` to report registered and operational agent components.
-- Added dashboard visibility for AI-agent component readiness beside Cortex task, memory, approval, outcome, quality, and snapshot state.
-- Added tests and CI smoke coverage for the component readiness command and dashboard panel.
-- Documented the safety boundary: the LLM brain is registered but not externally connected by default.
+- Added first-run setup profiles through `subreparo-immune setup`.
+- Added false-positive feedback through `subreparo-immune feedback`.
+- Added file, folder, and domain trust scoring through `subreparo-immune trust`.
+- Added watcher backend and target planning through `subreparo-immune watch-plan`.
+- Added local report integrity signatures through `subreparo-immune sign-report`.
+- Converted the local dashboard into tabbed panels for overview, Cortex, agent components, protection, and reports.
+- Integrated feedback, trust reports, and report signatures into the main local run flow.
+- Added tests and CI smoke coverage for the new platform commands.
 
 ## Phase 1: Local-first MVP
 
