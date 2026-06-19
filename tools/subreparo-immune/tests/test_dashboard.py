@@ -4,7 +4,13 @@ from pathlib import Path
 from subreparo_immune.approval_queue import enqueue_approval
 from subreparo_immune.cortex_memory import append_memory, append_task
 from subreparo_immune.cortex_models import ApprovalLevel, CortexRole, CortexTask
-from subreparo_immune.dashboard import render_approvals, render_page, render_snapshots, tail_jsonl
+from subreparo_immune.dashboard import (
+    render_agent_components,
+    render_approvals,
+    render_page,
+    render_snapshots,
+    tail_jsonl,
+)
 from subreparo_immune.outcome_records import append_outcome
 
 
@@ -58,6 +64,17 @@ def test_render_snapshots_lists_latest_manifest(tmp_path: Path, monkeypatch) -> 
     assert "file_count" in rendered
 
 
+def test_render_agent_components_lists_required_stack(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    rendered = render_agent_components()
+
+    assert "subreparo.agent_components.v1" in rendered
+    assert "LLM brain" in rendered
+    assert "External knowledge" in rendered
+    assert "Tools" in rendered
+
+
 def test_render_page_includes_cortex_metrics(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     state = tmp_path / ".subreparo"
@@ -79,6 +96,8 @@ def test_render_page_includes_cortex_metrics(tmp_path: Path, monkeypatch) -> Non
     page = render_page()
 
     assert "Cortex control layer" in page
+    assert "AI agent components" in page
+    assert "Registered: 5" in page
     assert "Tasks: 1" in page
     assert "Memory: 1" in page
     assert "Outcomes: 1" in page
