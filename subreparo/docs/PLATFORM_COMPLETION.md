@@ -18,4 +18,4 @@ subreparo-fleet . --json
 - Dry-run update plan.
 - Local fleet dashboard manifest.
 
-The commands are local-first and preview-oriented.
+The commands are local-first and preview-oriented. Larger release steps stay review-gated.
