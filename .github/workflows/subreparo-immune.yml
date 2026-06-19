@@ -44,7 +44,15 @@ jobs:
       - name: Build package
         run: python -m build
 
-      - name: Smoke test
+      - name: Smoke test core commands
         run: |
           subreparo-immune init .
           subreparo-immune run . --json
+          subreparo-immune rules --json
+          subreparo-immune inventory . --json
+          subreparo-immune trends . --json
+          subreparo-immune timeline . --json
+          subreparo-sbom . --json
+          subreparo-modes --json
+          subreparo-quarantine . --json
+          subreparo-monitor . --once --json
