@@ -11,11 +11,12 @@ The product is intentionally local-first. The chain should prove and remember ve
 - Added first-run setup profiles through `subreparo-immune setup`.
 - Added false-positive feedback through `subreparo-immune feedback`.
 - Added file, folder, and domain trust scoring through `subreparo-immune trust`.
+- Surfaced trust scores in markdown reports, append-only ledger records, and chain export payloads.
 - Added watcher backend and target planning through `subreparo-immune watch-plan`.
 - Added local report integrity signatures through `subreparo-immune sign-report`.
 - Converted the local dashboard into tabbed panels for overview, Cortex, agent components, protection, and reports.
 - Integrated feedback, trust reports, and report signatures into the main local run flow.
-- Added tests and CI smoke coverage for the new platform commands.
+- Added tests and CI smoke coverage for the new platform commands and feedback/trust behavior.
 
 ## Phase 1: Local-first MVP
 
