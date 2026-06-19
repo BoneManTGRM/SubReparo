@@ -69,3 +69,8 @@ jobs:
           subreparo-modes --json
           subreparo-quarantine . --json
           subreparo-monitor . --once --json
+          subreparo-alerts . --json
+          subreparo-tray . --json
+          subreparo-installer . --json
+          subreparo-updater . --json
+          subreparo-fleet . --json
