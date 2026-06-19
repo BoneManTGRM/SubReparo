@@ -135,6 +135,11 @@ subreparo/docs/REPARODYNAMICS.md
 - dependency manifest review, dependency inventory, and firewall suggestions;
 - quarantine staging and restore controls;
 - policy allowlist/blocklist/ignore-target management;
+- false-positive feedback records;
+- file, folder, and domain trust scoring;
+- first-run setup profile;
+- watcher backend and target planning with native-watchdog detection and polling fallback;
+- local report integrity signatures with optional HMAC key support;
 - Cortex planning, memory, approval queue, status report, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
 - safe project snapshots before high-risk work;
@@ -145,7 +150,7 @@ subreparo/docs/REPARODYNAMICS.md
 - timeline and risk trend summaries;
 - incident bundle export with privacy redaction;
 - hash-chained audit log;
-- local dashboard;
+- local tabbed dashboard;
 - rule catalog and rule changelog;
 - Reparodynamics, TGRM, and RYE metrics;
 - local repair ledger;
@@ -179,11 +184,14 @@ python -m pip install -e .
 
 ```bash
 subreparo-immune init .
+subreparo-immune setup . --mode simple
 subreparo-immune doctor .
 subreparo-immune patrol .
 subreparo-immune baseline .
 subreparo-immune diff .
+subreparo-immune trust .
 subreparo-immune quality .
+subreparo-immune sign-report .
 subreparo-monitor . --once
 ```
 
@@ -198,6 +206,12 @@ subreparo-immune quarantine . --restore-index 0
 subreparo-immune policy . --allow-hash <sha256>
 subreparo-immune policy . --block-hash <sha256>
 subreparo-immune policy . --ignore-target <target>
+subreparo-immune feedback . --false-positive <target> --reason "known safe"
+subreparo-immune trust . --json
+subreparo-immune setup . --mode developer --watch src
+subreparo-immune watch-plan . --json
+subreparo-immune sign-report . --json
+subreparo-immune sign-report . --verify --json
 subreparo-immune timeline .
 subreparo-immune trends .
 subreparo-immune inventory .
@@ -223,6 +237,10 @@ Outputs:
 .subreparo/chain_export.json
 .subreparo/quarantine_manifest.jsonl
 .subreparo/audit.jsonl
+.subreparo/feedback.json
+.subreparo/trust_report.json
+.subreparo/setup_profile.json
+.subreparo/report_signature.json
 .subreparo/cortex_memory.jsonl
 .subreparo/cortex_tasks.jsonl
 .subreparo/approval_queue.jsonl
