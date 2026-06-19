@@ -7,6 +7,8 @@ from pathlib import Path
 from .dashboard import serve
 from .engine import run_local
 from .immune_patrol import patrol
+from .models import Severity
+from .quarantine import stage_file
 from .scoring import calculate_score
 from .swarm import flatten, run_swarm
 
@@ -31,6 +33,11 @@ def build_parser() -> argparse.ArgumentParser:
     patrol_parser = subparsers.add_parser("patrol", help="Inspect local files for suspicious immune signals.")
     patrol_parser.add_argument("path", nargs="?", default=".")
     patrol_parser.add_argument("--json", action="store_true")
+
+    isolate_parser = subparsers.add_parser("isolate", help="Move high-risk local findings into SubReparo staging.")
+    isolate_parser.add_argument("path", nargs="?", default=".")
+    isolate_parser.add_argument("--apply", action="store_true", help="Apply staging. Without this flag, only prints the plan.")
+    isolate_parser.add_argument("--json", action="store_true")
 
     review_parser = subparsers.add_parser("review", help="Run all local analyzer groups.")
     review_parser.add_argument("path", nargs="?", default=".")
@@ -105,6 +112,44 @@ def command_patrol(args: argparse.Namespace) -> int:
     return 0 if score.value >= 70 else 2
 
 
+def _file_from_finding(root: Path, target: str) -> Path | None:
+    raw = target.split(":", 1)[0]
+    candidate = (root / raw).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate if candidate.exists() and candidate.is_file() else None
+
+
+def command_isolate(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    findings = [finding for finding in patrol(root) if finding.severity in {Severity.HIGH, Severity.CRITICAL}]
+    actions = []
+    for finding in findings:
+        path = _file_from_finding(root, finding.target)
+        if path is None:
+            actions.append({"target": finding.target, "status": "manual_review", "reason": finding.message})
+            continue
+        if args.apply:
+            record = stage_file(root, path, reason=finding.message, state_dir=root / ".subreparo")
+            actions.append({"target": finding.target, "status": "staged", "staged_path": record.staged_path})
+        else:
+            actions.append({"target": finding.target, "status": "planned", "reason": finding.message})
+    if args.json:
+        print(json.dumps({"actions": actions}, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Isolation Plan" if not args.apply else "SubReparo Isolation Applied")
+        print("========================")
+        if not actions:
+            print("No high-risk local findings found.")
+        for action in actions:
+            print(f"- {action['status']}: {action['target']}")
+            if "staged_path" in action:
+                print(f"  Staged at: {action['staged_path']}")
+    return 0
+
+
 def command_review(args: argparse.Namespace) -> int:
     results = run_swarm(Path(args.path), websites=args.website)
     findings = flatten(results)
@@ -152,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_doctor(args)
     if args.command == "patrol":
         return command_patrol(args)
+    if args.command == "isolate":
+        return command_isolate(args)
     if args.command == "review":
         return command_review(args)
     if args.command == "dashboard":
