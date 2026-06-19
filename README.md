@@ -128,6 +128,22 @@ subreparo-immune-agent . --bot-backend "project health review" --json
 
 Details: `subreparo/docs/IMMUNE_AGENT_CORE.md`.
 
+## Platform completion layer
+
+The final local-first platform scaffolds are now exposed as commands:
+
+```bash
+subreparo-alerts . --json
+subreparo-tray . --json
+subreparo-installer . --json
+subreparo-updater . --json
+subreparo-fleet . --json
+```
+
+These commands cover alert planning, tray manifest state, Windows/macOS/Linux packaging manifests, dry-run update planning, and local fleet dashboard summaries. High-impact release or update actions remain manual-review gated.
+
+Details: `subreparo/docs/PLATFORM_COMPLETION.md`.
+
 ## Full SDK foundation
 
 SubReparo uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
@@ -206,6 +222,11 @@ subreparo/docs/REPARODYNAMICS.md
 - trust scores in markdown reports, append-only ledger records, and chain export payloads;
 - first-run setup profile;
 - native file watcher event collection with metadata-only polling fallback;
+- local alert planning and alert inbox records;
+- desktop tray manifest scaffold;
+- Windows, macOS, and Linux package manifests;
+- dry-run update plan scaffold;
+- local fleet dashboard manifest;
 - local report integrity signatures with optional HMAC key support;
 - Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
@@ -273,6 +294,11 @@ subreparo-immune quality .
 subreparo-immune sign-report .
 subreparo-monitor . --once
 subreparo-monitor . --native-watch --duration 15 --json
+subreparo-alerts . --json
+subreparo-tray . --json
+subreparo-installer . --json
+subreparo-updater . --json
+subreparo-fleet . --json
 ```
 
 ## Useful commands
@@ -291,6 +317,11 @@ subreparo-immune trust . --json
 subreparo-immune setup . --mode developer --watch src
 subreparo-immune watch-plan . --json
 subreparo-monitor . --native-watch --all-targets --duration 30 --json
+subreparo-alerts . --write-inbox --json
+subreparo-tray . --write-manifest --json
+subreparo-installer . --write-manifest --json
+subreparo-updater . --write-plan --json
+subreparo-fleet . --write-dashboard --json
 subreparo-immune sign-report . --json
 subreparo-immune sign-report . --verify --json
 subreparo-immune timeline .
@@ -331,6 +362,11 @@ Outputs:
 .subreparo/trust_report.json
 .subreparo/setup_profile.json
 .subreparo/report_signature.json
+.subreparo/native_alerts.jsonl
+.subreparo/tray_manifest.json
+.subreparo/installer_manifest.json
+.subreparo/update_plan.json
+.subreparo/fleet_dashboard.json
 .subreparo/cortex_memory.jsonl
 .subreparo/cortex_tasks.jsonl
 .subreparo/approval_queue.jsonl
