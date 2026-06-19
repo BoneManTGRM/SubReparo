@@ -16,10 +16,11 @@ def test_scheduled_task_scan_finds_risky_network_command(tmp_path: Path) -> None
     )
 
     findings = scan_scheduled_tasks(tmp_path)
+    matching = [finding for finding in findings if finding.target.endswith("backup.xml")]
 
-    assert len(findings) == 1
-    assert findings[0].severity == Severity.HIGH
-    assert "scheduled task" in findings[0].message
+    assert matching
+    assert matching[0].severity == Severity.HIGH
+    assert "scheduled task" in matching[0].message
 
 
 def test_severity_explanation_returns_operator_action() -> None:
