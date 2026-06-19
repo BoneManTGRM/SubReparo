@@ -18,6 +18,9 @@ subreparo-immune init .
 subreparo-immune run .
 subreparo-immune run . --json
 subreparo-immune run . --website https://example.com
+subreparo-immune quality . --json
+subreparo-cortex . --status --json
+subreparo-immune dashboard
 ```
 
 ## Outputs
@@ -26,6 +29,12 @@ subreparo-immune run . --website https://example.com
 .subreparo/report.md
 .subreparo/repair_ledger.jsonl
 .subreparo/chain_export.json
+.subreparo/cortex_memory.jsonl
+.subreparo/cortex_tasks.jsonl
+.subreparo/approval_queue.jsonl
+.subreparo/outcome_records.jsonl
+.subreparo/quality_report.json
+.subreparo/snapshots/
 ```
 
 ## Current checks
@@ -37,6 +46,20 @@ subreparo-immune run . --website https://example.com
 - website response check;
 - project score and markdown report;
 - digest/export payload for future chain bridge.
+
+## Cortex dashboard visibility
+
+The local dashboard now surfaces the Cortex operator layer:
+
+- task count;
+- memory count;
+- pending approval count;
+- outcome count;
+- quality gate report;
+- latest snapshot manifest;
+- pending approval reasons.
+
+This keeps the platform local-first while making the adaptive repair loop visible enough to supervise before repair execution becomes more autonomous.
 
 ## PyPI packaging
 
