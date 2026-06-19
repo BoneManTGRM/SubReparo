@@ -44,6 +44,7 @@ subreparo-hash-lookup = "subreparo_immune.hash_lookup_cli:main"
 subreparo-learning = "subreparo_immune.learning_cli:main"
 subreparo-immune-agent = "subreparo_immune.immune_agent_cli:main"
 subreparo-pdf-report = "subreparo_immune.pdf_report_cli:main"
+subreparo-launch-check = "subreparo_immune.launch_check_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
