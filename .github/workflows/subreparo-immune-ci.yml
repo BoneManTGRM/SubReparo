@@ -1,0 +1,59 @@
+name: SubReparo Immune CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/subreparo-immune/**"
+      - ".github/workflows/subreparo-immune-ci.yml"
+  pull_request:
+    paths:
+      - "tools/subreparo-immune/**"
+      - ".github/workflows/subreparo-immune-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and test tools
+        working-directory: tools/subreparo-immune
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Compile all Python modules
+        working-directory: tools/subreparo-immune
+        run: python -m compileall src tests
+
+      - name: Run unit tests
+        working-directory: tools/subreparo-immune
+        run: pytest -q
+
+      - name: Smoke test console commands
+        working-directory: tools/subreparo-immune
+        run: |
+          tmpdir="$(mktemp -d)"
+          subreparo-immune init "$tmpdir"
+          subreparo-immune rules --json
+          subreparo-immune policy "$tmpdir" --json
+          subreparo-immune inventory "$tmpdir" --json
+          subreparo-immune audit "$tmpdir"
+          subreparo-modes --json
+          subreparo-cortex "$tmpdir" --plan --json
+          subreparo-cortex "$tmpdir" --next --json
+          subreparo-monitor "$tmpdir" --once --json
+          subreparo-sbom "$tmpdir" --json
