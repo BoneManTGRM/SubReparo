@@ -10,7 +10,7 @@ from .baseline import compare
 from .immune_patrol import patrol
 from .process_scan import scan_processes
 from .scoring import calculate_score
-from .watcher import build_watch_plan
+from .watcher import build_watch_plan, collect_native_file_events
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,6 +20,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--all-targets", action="store_true", help="Monitor configured watch-plan targets.")
+    parser.add_argument(
+        "--native-watch",
+        action="store_true",
+        help="Collect native watchdog file-system events when the optional dependency is installed.",
+    )
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=10.0,
+        help="Seconds to collect native file-system events when --native-watch is used.",
+    )
     return parser
 
 
@@ -62,9 +73,41 @@ def run_once(root: Path, all_targets: bool = False) -> dict[str, object]:
     }
 
 
+def run_native_watch(root: Path, *, all_targets: bool = False, duration: float = 10.0) -> dict[str, Any]:
+    targets = _target_paths(root) if all_targets else [root]
+    return collect_native_file_events(targets, duration=duration)
+
+
+def _print_native_payload(payload: dict[str, Any]) -> None:
+    backend = payload.get("backend", "unknown")
+    events = payload.get("events", [])
+    print("SubReparo Native File Watch")
+    print("===========================")
+    print(f"Backend: {backend}")
+    if payload.get("recommendation"):
+        print(f"Recommendation: {payload['recommendation']}")
+    if not events:
+        print("No native file events observed.")
+        return
+    for event in events[:50]:
+        print(f"- [{event.get('severity', 'info').upper()}] {event.get('event_type')} {event.get('path')}")
+        print(f"  {event.get('recommendation')}")
+    if payload.get("truncated"):
+        print("Event output was truncated at the configured safety limit.")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path(args.path).resolve()
+
+    if args.native_watch:
+        payload = run_native_watch(root, all_targets=args.all_targets, duration=args.duration)
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            _print_native_payload(payload)
+        return 0
+
     seen: set[str] = set()
 
     while True:
