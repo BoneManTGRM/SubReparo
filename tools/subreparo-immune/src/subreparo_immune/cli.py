@@ -8,13 +8,18 @@ from .audit import verify_audit
 from .baseline import compare, write_baseline
 from .dashboard import serve
 from .engine import run_local
+from .firewall import firewall_suggestions
 from .incident_bundle import create_bundle
 from .immune_patrol import patrol
+from .inventory import dependency_inventory
 from .models import Severity
+from .policy import add_allowed_hash, add_blocked_hash, add_ignored_target, initialize_policy, load_policy
 from .quarantine import list_records, restore_all, restore_record, stage_file
 from .rules import rule_catalog
 from .scoring import calculate_score
 from .swarm import flatten, run_swarm
+from .timeline import build_timeline
+from .trends import risk_trends
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +60,29 @@ def build_parser() -> argparse.ArgumentParser:
     q_parser.add_argument("--restore-index", type=int)
     q_parser.add_argument("--restore-all", action="store_true")
     q_parser.add_argument("--json", action="store_true")
+
+    policy_parser = subparsers.add_parser("policy", help="Manage local SubReparo policy.")
+    policy_parser.add_argument("path", nargs="?", default=".")
+    policy_parser.add_argument("--allow-hash")
+    policy_parser.add_argument("--block-hash")
+    policy_parser.add_argument("--ignore-target")
+    policy_parser.add_argument("--json", action="store_true")
+
+    timeline_parser = subparsers.add_parser("timeline", help="Show local event timeline.")
+    timeline_parser.add_argument("path", nargs="?", default=".")
+    timeline_parser.add_argument("--json", action="store_true")
+
+    trends_parser = subparsers.add_parser("trends", help="Show local risk trend summary.")
+    trends_parser.add_argument("path", nargs="?", default=".")
+    trends_parser.add_argument("--json", action="store_true")
+
+    inventory_parser = subparsers.add_parser("inventory", help="Show dependency manifest inventory.")
+    inventory_parser.add_argument("path", nargs="?", default=".")
+    inventory_parser.add_argument("--json", action="store_true")
+
+    firewall_parser = subparsers.add_parser("firewall", help="Show firewall suggestion export.")
+    firewall_parser.add_argument("path", nargs="?", default=".")
+    firewall_parser.add_argument("--json", action="store_true")
 
     bundle_parser = subparsers.add_parser("bundle", help="Create a sanitized incident bundle.")
     bundle_parser.add_argument("path", nargs="?", default=".")
@@ -231,6 +259,75 @@ def command_quarantine(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_policy(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    policy_path = root / ".subreparo" / "policy.json"
+    initialize_policy(policy_path)
+    if args.allow_hash:
+        policy = add_allowed_hash(args.allow_hash, policy_path)
+    elif args.block_hash:
+        policy = add_blocked_hash(args.block_hash, policy_path)
+    elif args.ignore_target:
+        policy = add_ignored_target(args.ignore_target, policy_path)
+    else:
+        policy = load_policy(policy_path)
+    payload = policy.to_dict()
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Policy")
+        print("================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_timeline(args: argparse.Namespace) -> int:
+    events = build_timeline(Path(args.path))
+    if args.json:
+        print(json.dumps(events, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Timeline")
+        print("==================")
+        if not events:
+            print("No local timeline events found.")
+        for event in events[-30:]:
+            print(f"- {event.get('created_at', '')} {event.get('event_type')} from {event.get('source')}")
+    return 0
+
+
+def command_trends(args: argparse.Namespace) -> int:
+    payload = risk_trends(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Risk Trends")
+        print("=====================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_inventory(args: argparse.Namespace) -> int:
+    payload = dependency_inventory(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Dependency Inventory")
+        print("==============================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_firewall(args: argparse.Namespace) -> int:
+    payload = firewall_suggestions(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Firewall Suggestions")
+        print("==============================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
 def command_bundle(args: argparse.Namespace) -> int:
     output = Path(args.output) if args.output else None
     bundle = create_bundle(Path(args.path), output=output)
@@ -311,6 +408,16 @@ def main(argv: list[str] | None = None) -> int:
         return command_isolate(args)
     if args.command == "quarantine":
         return command_quarantine(args)
+    if args.command == "policy":
+        return command_policy(args)
+    if args.command == "timeline":
+        return command_timeline(args)
+    if args.command == "trends":
+        return command_trends(args)
+    if args.command == "inventory":
+        return command_inventory(args)
+    if args.command == "firewall":
+        return command_firewall(args)
     if args.command == "bundle":
         return command_bundle(args)
     if args.command == "audit":
