@@ -9,6 +9,7 @@ from typing import Any
 from .baseline import compare
 from .browser_scan import scan_browser_extensions
 from .detectors import check_website, scan_git, scan_project, write_json
+from .explain import explain_finding
 from .immune_patrol import patrol
 from .models import Finding, Severity
 from .policy import apply_policy, load_policy
@@ -125,6 +126,7 @@ def write_report(result: EngineResult) -> None:
         metrics = repair_metrics(finding)
         lines.append(f"- **{finding.severity.value.upper()}** `{finding.type.value}` at `{finding.target}`")
         lines.append(f"  - Message: {finding.message}")
+        lines.append(f"  - Explanation: {explain_finding(finding)}")
         lines.append(f"  - Recommendation: {finding.recommendation}")
         lines.append(f"  - TGRM phase: {metrics['tgrm_phase']}")
         lines.append(f"  - RYE: {metrics['rye']}")
