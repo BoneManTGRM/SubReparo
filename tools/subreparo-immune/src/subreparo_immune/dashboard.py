@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import html
-import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+
+from .quarantine import list_records
 
 REPORT_PATH = Path(".subreparo") / "report.md"
 EXPORT_PATH = Path(".subreparo") / "chain_export.json"
 LEDGER_PATH = Path(".subreparo") / "repair_ledger.jsonl"
+ALERTS_PATH = Path(".subreparo") / "watch_alerts.jsonl"
+STATE_DIR = Path(".subreparo")
 
 
 def read_text(path: Path, fallback: str) -> str:
@@ -16,16 +19,32 @@ def read_text(path: Path, fallback: str) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def count_ledger() -> int:
-    if not LEDGER_PATH.exists():
+def count_lines(path: Path) -> int:
+    if not path.exists():
         return 0
-    return sum(1 for line in LEDGER_PATH.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip())
+    return sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip())
+
+
+def render_quarantine() -> str:
+    records = list_records(STATE_DIR)
+    if not records:
+        return "No staged files found."
+    lines: list[str] = []
+    for index, record in enumerate(records):
+        lines.append(f"[{index}] {record.staged_path}")
+        lines.append(f"  Original: {record.original_path}")
+        lines.append(f"  Reason: {record.reason}")
+    return "\n".join(lines)
 
 
 def render_page() -> str:
     report = html.escape(read_text(REPORT_PATH, "No report found. Run `subreparo-immune run .` first."))
     export = html.escape(read_text(EXPORT_PATH, "No chain export found."))
-    ledger_count = count_ledger()
+    alerts = html.escape(read_text(ALERTS_PATH, "No monitor alerts found."))
+    quarantine = html.escape(render_quarantine())
+    ledger_count = count_lines(LEDGER_PATH)
+    alert_count = count_lines(ALERTS_PATH)
+    quarantine_count = len(list_records(STATE_DIR))
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -38,7 +57,7 @@ def render_page() -> str:
     main {{ padding: 24px; display: grid; gap: 20px; max-width: 1100px; margin: 0 auto; }}
     section {{ background: #171b24; border: 1px solid #2c3342; border-radius: 14px; padding: 18px; }}
     pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #0b0d12; padding: 14px; border-radius: 10px; }}
-    .metric {{ display: inline-block; margin-right: 18px; padding: 10px 14px; background: #222838; border-radius: 10px; }}
+    .metric {{ display: inline-block; margin-right: 18px; margin-bottom: 10px; padding: 10px 14px; background: #222838; border-radius: 10px; }}
   </style>
 </head>
 <body>
@@ -50,8 +69,18 @@ def render_page() -> str:
   <section>
     <h2>Status</h2>
     <div class="metric">Ledger records: {ledger_count}</div>
+    <div class="metric">Alerts: {alert_count}</div>
+    <div class="metric">Quarantine: {quarantine_count}</div>
     <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
     <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
+  </section>
+  <section>
+    <h2>Quarantine</h2>
+    <pre>{quarantine}</pre>
+  </section>
+  <section>
+    <h2>Monitor alerts</h2>
+    <pre>{alerts}</pre>
   </section>
   <section>
     <h2>Latest report</h2>
