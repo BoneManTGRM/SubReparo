@@ -130,8 +130,18 @@ def repair_metrics(finding: Finding) -> dict[str, Any]:
     }
 
 
+def _trust_report_for_result(result: EngineResult) -> dict[str, Any]:
+    return build_trust_report_from_findings(Path(result.project), result.findings)
+
+
+def _trust_by_target(result: EngineResult) -> dict[str, dict[str, Any]]:
+    trust = _trust_report_for_result(result)
+    return {item["target"]: item for item in trust.get("file_scores", [])}
+
+
 def write_report(result: EngineResult) -> None:
     score = calculate_score(result.findings)
+    trust = _trust_report_for_result(result)
     lines = [
         "# SubReparo Immune Report",
         "",
@@ -145,21 +155,45 @@ def write_report(result: EngineResult) -> None:
         f"- Findings: **{score.findings}**",
         f"- Action: {score.action}",
         "",
+        "## Trust scoring",
+        "",
+        f"- Average trust: **{trust.get('average_trust', 100)}**",
+        f"- Active findings: **{trust.get('active_finding_count', len(result.findings))}**",
+        f"- Trust report: `{result.trust_report_path}`",
+        "",
+        "Lowest file trust scores:",
+    ]
+    file_scores = trust.get("file_scores", [])
+    if not file_scores:
+        lines.append("No low-trust files detected.")
+    for item in sorted(file_scores, key=lambda value: value.get("score", 100))[:5]:
+        lines.append(
+            f"- **{item.get('score')}** `{redact_text(item.get('target', ''))}` "
+            f"({item.get('status')})"
+        )
+    lines.extend([
+        "",
         "## Reparodynamics",
         "",
         "SubReparo evaluates findings through TGRM phases and RYE-style repair efficiency metrics.",
         "",
         "## Findings",
         "",
-    ]
+    ])
+    trust_by_target = _trust_by_target(result)
     if not result.findings:
         lines.append("No project signals detected.")
     for finding in result.findings:
         metrics = repair_metrics(finding)
-        lines.append(f"- **{finding.severity.value.upper()}** `{finding.type.value}` at `{redact_text(finding.target)}`")
+        trust_item = trust_by_target.get(finding.target, {})
+        lines.append(
+            f"- **{finding.severity.value.upper()}** `{finding.type.value}` "
+            f"at `{redact_text(finding.target)}`"
+        )
         lines.append(f"  - Message: {redact_text(finding.message)}")
         lines.append(f"  - Explanation: {explain_finding(finding)}")
         lines.append(f"  - Recommendation: {redact_text(finding.recommendation)}")
+        lines.append(f"  - Trust score: {trust_item.get('score', 'n/a')}")
         lines.append(f"  - TGRM phase: {metrics['tgrm_phase']}")
         lines.append(f"  - RYE: {metrics['rye']}")
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -168,6 +202,7 @@ def write_report(result: EngineResult) -> None:
 
 def append_ledger(result: EngineResult) -> None:
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    trust_by_target = _trust_by_target(result)
     with LEDGER_PATH.open("a", encoding="utf-8") as handle:
         for finding in result.findings:
             handle.write(json.dumps(redact_mapping({
@@ -175,14 +210,17 @@ def append_ledger(result: EngineResult) -> None:
                 "project": result.project,
                 "finding": finding.to_dict(),
                 "reparodynamics": repair_metrics(finding),
+                "trust": trust_by_target.get(finding.target),
                 "status": "pending",
             }), sort_keys=True) + "\n")
 
 
 def write_export(result: EngineResult) -> None:
     records = []
+    trust_by_target = _trust_by_target(result)
     for index, finding in enumerate(result.findings):
         metrics = repair_metrics(finding)
+        trust_item = trust_by_target.get(finding.target, {})
         records.append({
             "local_id": index,
             "category": finding.type.value,
@@ -192,5 +230,7 @@ def write_export(result: EngineResult) -> None:
             "summary": redact_text(finding.message),
             "tgrm_phase": metrics["tgrm_phase"],
             "rye": metrics["rye"],
+            "trust_score": trust_item.get("score"),
+            "trust_status": trust_item.get("status"),
         })
     write_json(EXPORT_PATH, {"generated_at": result.generated_at, "records": records})
