@@ -32,6 +32,7 @@ Issues = "https://github.com/BoneManTGRM/SubReparo/issues"
 
 [project.scripts]
 subreparo-immune = "subreparo_immune.cli:main"
+subreparo-monitor = "subreparo_immune.monitor_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
