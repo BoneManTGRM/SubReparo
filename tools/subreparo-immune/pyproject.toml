@@ -25,6 +25,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+native-watch = ["watchdog>=4,<7"]
+
 [project.urls]
 Homepage = "https://github.com/BoneManTGRM/SubReparo"
 Repository = "https://github.com/BoneManTGRM/SubReparo"
