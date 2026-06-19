@@ -8,7 +8,10 @@ from .tray_app import build_tray_manifest, write_tray_manifest
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="subreparo-tray", description="Show SubReparo desktop tray manifest.")
+    parser = argparse.ArgumentParser(
+        prog="subreparo-tray",
+        description="Show SubReparo desktop tray manifest.",
+    )
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--dashboard-url", default="http://127.0.0.1:8765")
     parser.add_argument("--write-manifest", action="store_true")
@@ -21,7 +24,8 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.path).resolve()
     payload = build_tray_manifest(root, dashboard_url=args.dashboard_url)
     if args.write_manifest:
-        payload["written_to"] = str(write_tray_manifest(root, dashboard_url=args.dashboard_url))
+        path = write_tray_manifest(root, dashboard_url=args.dashboard_url)
+        payload["written_to"] = str(path)
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
