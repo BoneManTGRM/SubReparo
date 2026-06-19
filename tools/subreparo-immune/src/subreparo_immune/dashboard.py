@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import html
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from typing import Any
 
+from .approval_queue import pending_approvals
 from .quarantine import list_records
+from .status_report import build_status_report
 
 REPORT_PATH = Path(".subreparo") / "report.md"
 EXPORT_PATH = Path(".subreparo") / "chain_export.json"
 LEDGER_PATH = Path(".subreparo") / "repair_ledger.jsonl"
 ALERTS_PATH = Path(".subreparo") / "watch_alerts.jsonl"
+QUALITY_PATH = Path(".subreparo") / "quality_report.json"
+SNAPSHOT_MANIFEST_PATH = Path(".subreparo") / "snapshots" / "snapshot_manifest.jsonl"
 STATE_DIR = Path(".subreparo")
 
 
@@ -25,6 +31,20 @@ def count_lines(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip())
 
 
+def tail_jsonl(path: Path, limit: int = 8) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    lines = [line for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip()]
+    for line in lines[-limit:]:
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            row = {"unreadable": line}
+        rows.append(row)
+    return rows
+
+
 def render_quarantine() -> str:
     records = list_records(STATE_DIR)
     if not records:
@@ -37,14 +57,45 @@ def render_quarantine() -> str:
     return "\n".join(lines)
 
 
+def render_status_report() -> str:
+    payload = build_status_report(Path("."))
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def render_approvals() -> str:
+    approvals = pending_approvals(STATE_DIR / "approval_queue.jsonl")
+    if not approvals:
+        return "No pending approvals."
+    lines: list[str] = []
+    for approval in approvals[:8]:
+        task = approval.task
+        lines.append(f"- {task.get('title', 'Untitled task')}")
+        lines.append(f"  Level: {approval.approval_level}")
+        lines.append(f"  Reason: {approval.reason}")
+        lines.append(f"  Created: {approval.created_at}")
+    return "\n".join(lines)
+
+
+def render_snapshots() -> str:
+    snapshots = tail_jsonl(SNAPSHOT_MANIFEST_PATH, limit=5)
+    if not snapshots:
+        return "No snapshots found."
+    return json.dumps(snapshots, indent=2, sort_keys=True)
+
+
 def render_page() -> str:
     report = html.escape(read_text(REPORT_PATH, "No report found. Run `subreparo-immune run .` first."))
     export = html.escape(read_text(EXPORT_PATH, "No chain export found."))
     alerts = html.escape(read_text(ALERTS_PATH, "No monitor alerts found."))
+    quality = html.escape(read_text(QUALITY_PATH, "No quality report found. Run `subreparo-immune quality .`."))
     quarantine = html.escape(render_quarantine())
+    cortex_status = html.escape(render_status_report())
+    approvals = html.escape(render_approvals())
+    snapshots = html.escape(render_snapshots())
     ledger_count = count_lines(LEDGER_PATH)
     alert_count = count_lines(ALERTS_PATH)
     quarantine_count = len(list_records(STATE_DIR))
+    status_payload = build_status_report(Path("."))
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -73,6 +124,26 @@ def render_page() -> str:
     <div class="metric">Quarantine: {quarantine_count}</div>
     <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
     <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
+  </section>
+  <section>
+    <h2>Cortex control layer</h2>
+    <div class="metric">Tasks: {status_payload["task_count"]}</div>
+    <div class="metric">Memory: {status_payload["memory_count"]}</div>
+    <div class="metric">Approvals: {status_payload["pending_approvals"]}</div>
+    <div class="metric">Outcomes: {status_payload["outcome_count"]}</div>
+    <pre>{cortex_status}</pre>
+  </section>
+  <section>
+    <h2>Pending approvals</h2>
+    <pre>{approvals}</pre>
+  </section>
+  <section>
+    <h2>Quality gate</h2>
+    <pre>{quality}</pre>
+  </section>
+  <section>
+    <h2>Snapshots</h2>
+    <pre>{snapshots}</pre>
   </section>
   <section>
     <h2>Quarantine</h2>
