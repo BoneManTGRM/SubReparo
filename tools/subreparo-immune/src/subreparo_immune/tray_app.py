@@ -23,7 +23,11 @@ def optional_tray_backend_available() -> bool:
     return importlib.util.find_spec("pystray") is not None
 
 
-def build_tray_manifest(root: Path, *, dashboard_url: str = "http://127.0.0.1:8765") -> dict[str, Any]:
+def build_tray_manifest(
+    root: Path,
+    *,
+    dashboard_url: str = "http://127.0.0.1:8765",
+) -> dict[str, Any]:
     root = root.resolve()
     alert_count = len(read_jsonl(root / ALERT_INBOX))
     return {
@@ -48,10 +52,17 @@ def build_tray_manifest(root: Path, *, dashboard_url: str = "http://127.0.0.1:87
     }
 
 
-def write_tray_manifest(root: Path, *, dashboard_url: str = "http://127.0.0.1:8765") -> Path:
+def write_tray_manifest(
+    root: Path,
+    *,
+    dashboard_url: str = "http://127.0.0.1:8765",
+) -> Path:
     root = root.resolve()
     path = root / TRAY_MANIFEST
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = build_tray_manifest(root, dashboard_url=dashboard_url)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     return path
