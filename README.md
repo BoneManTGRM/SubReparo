@@ -17,6 +17,71 @@ SubReparo Immune  -> local-first engine, score, reports, ledger, export payload
 SubReparo Chain   -> Polkadot SDK / FRAME repair-ledger memory
 ```
 
+## Full SDK foundation
+
+SubReparo V2 uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
+
+```text
+sdk/polkadot-sdk
+```
+
+This keeps the repository clean while still giving SubReparo the full SDK foundation.
+
+To install the SDK foundation locally:
+
+```bash
+git submodule update --init --recursive
+```
+
+Or run:
+
+```bash
+bash scripts/bootstrap-sdk-foundation.sh
+```
+
+Windows:
+
+```powershell
+./scripts/bootstrap-sdk-foundation.ps1
+```
+
+The SDK workspace receives the SubReparo additions:
+
+```text
+sdk/polkadot-sdk/frame/reparodynamics
+sdk/polkadot-sdk/tools/subreparo-immune
+sdk/polkadot-sdk/subreparo/docs
+```
+
+## Reparodynamics layer
+
+SubReparo is not only a scanner.
+
+It includes first-class Reparodynamics concepts:
+
+```text
+stress -> fracture -> repair -> verification -> scar memory -> adaptation
+```
+
+TGRM repair phases:
+
+```text
+TEST -> DETECT -> REPAIR -> VERIFY -> MEMORY
+```
+
+RYE metric:
+
+```text
+RYE = repair_gain / energy_cost
+```
+
+These are implemented in:
+
+```text
+tools/subreparo-immune/src/subreparo_immune/reparodynamics.py
+subreparo/docs/REPARODYNAMICS.md
+```
+
 ## What works now
 
 - local Python engine under `tools/subreparo-immune`;
@@ -26,11 +91,12 @@ SubReparo Chain   -> Polkadot SDK / FRAME repair-ledger memory
 - git working-tree review;
 - website response check;
 - score and markdown report;
+- Reparodynamics, TGRM, and RYE metrics;
 - local repair ledger;
 - chain export payload;
 - CI workflow for the Python tool;
 - `frame/reparodynamics` pallet scaffold;
-- SDK migration and bridge docs.
+- SDK bootstrap and bridge docs.
 
 ## Quick test
 
@@ -62,8 +128,8 @@ Outputs:
 
 Raw project files, local logs, private notes, and customer data should stay local by default.
 
-The chain should store safe summaries, labels, status values, and digests only.
+The chain should store safe summaries, labels, status values, RYE metrics, TGRM phases, and digests only.
 
 ## Status
 
-Alpha MVP. Local-first product is usable; chain pallet is scaffolded and still needs runtime wiring, tests, benchmarks, and review.
+Alpha MVP. Local-first product is usable; SDK foundation is pinned by submodule/bootstrap path; chain pallet is scaffolded and still needs runtime wiring, tests, benchmarks, and review.
