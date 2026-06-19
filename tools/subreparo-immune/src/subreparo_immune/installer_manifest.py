@@ -15,7 +15,7 @@ def _platform_entry(name: str) -> dict[str, Any]:
     artifacts = {
         "windows": ["scripts/install-subreparo-immune.ps1", "packaging/windows/README.md"],
         "macos": ["scripts/install-subreparo-immune.sh", "packaging/macos/README.md"],
-        "linux": ["scripts/install-subreparo-immune.sh", "packaging/linux/README.md"],
+        "linux": ["scripts/install-subreparo-immune.sh"],
     }
     return {
         "platform": name,
@@ -58,5 +58,8 @@ def write_installer_manifest(root: Path, platforms: list[str] | None = None) -> 
     root = root.resolve()
     path = root / INSTALLER_MANIFEST
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(build_installer_manifest(platforms), indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(
+        json.dumps(build_installer_manifest(platforms), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     return path
