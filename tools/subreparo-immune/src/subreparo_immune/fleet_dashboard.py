@@ -12,7 +12,8 @@ FLEET_DASHBOARD = Path(".subreparo") / "fleet_dashboard.json"
 def _count_lines(path: Path) -> int:
     if not path.exists():
         return 0
-    return sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip())
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return sum(1 for line in lines if line.strip())
 
 
 def _json_file_state(path: Path) -> dict[str, Any]:
@@ -70,7 +71,7 @@ def build_fleet_dashboard(root: Path, nodes: list[Path] | None = None) -> dict[s
         "safety": {
             "local_only": True,
             "raw_file_content_collected": False,
-            "network_listener_started": False,
+            "remote_listener_started": False,
         },
     }
 
@@ -80,5 +81,8 @@ def write_fleet_dashboard(root: Path, nodes: list[Path] | None = None) -> Path:
     path = root / FLEET_DASHBOARD
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = build_fleet_dashboard(root, nodes=nodes)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     return path
