@@ -34,6 +34,34 @@ SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles, q
 SubReparo Chain      -> Polkadot SDK / FRAME repair-ledger memory
 ```
 
+## AI agent ingredients
+
+SubReparo Cortex now exposes the standard AI-agent component stack:
+
+```text
+1. LLM brain
+2. Prompting and instructions
+3. Memory
+4. External knowledge
+5. Tools
+```
+
+The three minimum ingredients are also tracked explicitly:
+
+```text
+external knowledge + tools + prompting
+```
+
+The LLM brain is registered as a component, but no external model is connected by default. Any live model connector must be defensive, local-first where possible, and approval-gated before private project context is shared outside the machine.
+
+Run:
+
+```bash
+subreparo-cortex . --components --json
+```
+
+Details: `subreparo/docs/AGENT_COMPONENTS.md`.
+
 ## Full SDK foundation
 
 SubReparo uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
@@ -108,6 +136,7 @@ subreparo/docs/REPARODYNAMICS.md
 - quarantine staging and restore controls;
 - policy allowlist/blocklist/ignore-target management;
 - Cortex planning, memory, approval queue, status report, and outcome records;
+- Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
 - safe project snapshots before high-risk work;
 - quality gate command and CI smoke tests;
 - git working-tree review;
@@ -183,6 +212,7 @@ subreparo-cortex . --next --json
 subreparo-cortex . --memory --json
 subreparo-cortex . --approvals --json
 subreparo-cortex . --status --json
+subreparo-cortex . --components --json
 ```
 
 Outputs:
