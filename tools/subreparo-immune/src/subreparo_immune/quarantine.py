@@ -74,6 +74,15 @@ def list_records(state_dir: Path) -> list[QuarantineRecord]:
     return records
 
 
+def _rewrite_manifest(state_dir: Path, records: list[QuarantineRecord]) -> None:
+    manifest_path = state_dir / "quarantine_manifest.jsonl"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(
+        "".join(json.dumps(record.to_dict(), sort_keys=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+
+
 def restore_record(root: Path, index: int, state_dir: Path | None = None) -> QuarantineRecord:
     root = root.resolve()
     state = (state_dir or root / ".subreparo").resolve()
@@ -102,15 +111,34 @@ def restore_record(root: Path, index: int, state_dir: Path | None = None) -> Qua
 
     original.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(staged), str(original))
+    _rewrite_manifest(state, [item for idx, item in enumerate(records) if idx != index])
     return record
 
 
 def restore_all(root: Path, state_dir: Path | None = None) -> list[QuarantineRecord]:
     restored: list[QuarantineRecord] = []
     state = state_dir or root.resolve() / ".subreparo"
-    for index, _record in enumerate(list_records(state)):
+    while list_records(state):
         try:
-            restored.append(restore_record(root, index, state_dir=state))
+            restored.append(restore_record(root, 0, state_dir=state))
         except (FileExistsError, FileNotFoundError, ValueError):
-            continue
+            break
     return restored
+
+
+def remove_staged_record(root: Path, index: int, state_dir: Path | None = None) -> QuarantineRecord:
+    root = root.resolve()
+    state = (state_dir or root / ".subreparo").resolve()
+    records = list_records(state)
+    if index < 0 or index >= len(records):
+        raise IndexError("Quarantine index out of range.")
+    record = records[index]
+    staged = Path(record.staged_path).resolve()
+    try:
+        staged.relative_to(state)
+    except ValueError as exc:
+        raise ValueError("Refusing to remove a staged file outside SubReparo state.") from exc
+    if staged.exists() and staged.is_file():
+        staged.unlink()
+    _rewrite_manifest(state, [item for idx, item in enumerate(records) if idx != index])
+    return record
