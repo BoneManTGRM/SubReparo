@@ -205,7 +205,7 @@ subreparo/docs/REPARODYNAMICS.md
 - file, folder, and domain trust scoring;
 - trust scores in markdown reports, append-only ledger records, and chain export payloads;
 - first-run setup profile;
-- watcher backend and target planning with native-watchdog detection and polling fallback;
+- native file watcher event collection with metadata-only polling fallback;
 - local report integrity signatures with optional HMAC key support;
 - Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
@@ -250,6 +250,15 @@ cd tools/subreparo-immune
 python -m pip install -e .
 ```
 
+Optional native file watcher support:
+
+```bash
+cd tools/subreparo-immune
+python -m pip install -e ".[native-watch]"
+```
+
+Details: `subreparo/docs/NATIVE_FILE_WATCHER.md`.
+
 ## Quick test
 
 ```bash
@@ -263,6 +272,7 @@ subreparo-immune trust .
 subreparo-immune quality .
 subreparo-immune sign-report .
 subreparo-monitor . --once
+subreparo-monitor . --native-watch --duration 15 --json
 ```
 
 ## Useful commands
@@ -280,6 +290,7 @@ subreparo-immune feedback . --false-positive <target> --reason "known safe"
 subreparo-immune trust . --json
 subreparo-immune setup . --mode developer --watch src
 subreparo-immune watch-plan . --json
+subreparo-monitor . --native-watch --all-targets --duration 30 --json
 subreparo-immune sign-report . --json
 subreparo-immune sign-report . --verify --json
 subreparo-immune timeline .
