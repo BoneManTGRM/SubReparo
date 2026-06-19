@@ -8,19 +8,31 @@ from .audit import verify_audit
 from .baseline import compare, write_baseline
 from .dashboard import serve
 from .engine import run_local
+from .feedback import apply_false_positive_feedback, load_feedback, mark_false_positive
 from .firewall import firewall_suggestions
 from .incident_bundle import create_bundle
 from .immune_patrol import patrol
 from .inventory import dependency_inventory
-from .models import Severity
-from .policy import add_allowed_hash, add_blocked_hash, add_ignored_target, initialize_policy, load_policy
+from .models import Finding, Severity
+from .policy import (
+    add_allowed_hash,
+    add_blocked_hash,
+    add_ignored_target,
+    apply_policy,
+    initialize_policy,
+    load_policy,
+)
 from .quality import run_quality
 from .quarantine import list_records, restore_all, restore_record, stage_file
 from .rules import rule_catalog
 from .scoring import calculate_score
+from .setup_wizard import VALID_MODES, create_setup_profile
+from .signed_reports import create_report_signature, verify_report_signature
 from .swarm import flatten, run_swarm
 from .timeline import build_timeline
 from .trends import risk_trends
+from .trust import build_trust_report_from_findings, write_trust_report
+from .watcher import build_watch_plan
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -68,6 +80,31 @@ def build_parser() -> argparse.ArgumentParser:
     policy_parser.add_argument("--block-hash")
     policy_parser.add_argument("--ignore-target")
     policy_parser.add_argument("--json", action="store_true")
+
+    feedback_parser = subparsers.add_parser("feedback", help="Manage local false-positive feedback.")
+    feedback_parser.add_argument("path", nargs="?", default=".")
+    feedback_parser.add_argument("--false-positive", help="Target to suppress as a false positive.")
+    feedback_parser.add_argument("--reason", default="User marked as false positive.")
+    feedback_parser.add_argument("--json", action="store_true")
+
+    trust_parser = subparsers.add_parser("trust", help="Build local trust scores for files, folders, and domains.")
+    trust_parser.add_argument("path", nargs="?", default=".")
+    trust_parser.add_argument("--json", action="store_true")
+
+    setup_parser = subparsers.add_parser("setup", help="Create a first-run SubReparo setup profile.")
+    setup_parser.add_argument("path", nargs="?", default=".")
+    setup_parser.add_argument("--mode", choices=sorted(VALID_MODES), default="simple")
+    setup_parser.add_argument("--watch", action="append", default=[])
+    setup_parser.add_argument("--json", action="store_true")
+
+    watch_parser = subparsers.add_parser("watch-plan", help="Show local watcher backend and target plan.")
+    watch_parser.add_argument("path", nargs="?", default=".")
+    watch_parser.add_argument("--json", action="store_true")
+
+    signature_parser = subparsers.add_parser("sign-report", help="Create or verify a local report signature.")
+    signature_parser.add_argument("path", nargs="?", default=".")
+    signature_parser.add_argument("--verify", action="store_true")
+    signature_parser.add_argument("--json", action="store_true")
 
     timeline_parser = subparsers.add_parser("timeline", help="Show local event timeline.")
     timeline_parser.add_argument("path", nargs="?", default=".")
@@ -126,6 +163,8 @@ def command_run(args: argparse.Namespace) -> int:
         print(f"Action: {score['action']}")
         print(f"Report: {payload['report_path']}")
         print(f"Export: {payload['export_path']}")
+        print(f"Trust: {payload['trust_report_path']}")
+        print(f"Signature: {payload['signature_path']}")
     return 0 if payload["score"]["value"] >= 70 else 2
 
 
@@ -151,12 +190,22 @@ def command_doctor(args: argparse.Namespace) -> int:
             print("No project signals detected.")
         print("")
         print(f"Report: {payload['report_path']}")
+        print(f"Trust: {payload['trust_report_path']}")
+        print(f"Signature: {payload['signature_path']}")
         print("Dashboard: subreparo-immune dashboard")
     return 0 if score["value"] >= 70 else 2
 
 
+def _policy_feedback_findings(root: Path, findings: list[Finding]) -> tuple[list[Finding], object]:
+    policy = load_policy(root / ".subreparo" / "policy.json")
+    feedback = load_feedback(root / ".subreparo" / "feedback.json")
+    policy_findings = apply_policy(findings, policy)
+    return apply_false_positive_feedback(policy_findings, feedback), feedback
+
+
 def command_patrol(args: argparse.Namespace) -> int:
-    findings = patrol(Path(args.path))
+    root = Path(args.path).resolve()
+    findings, _feedback = _policy_feedback_findings(root, patrol(root))
     score = calculate_score(findings)
     payload = {"score": score.to_dict(), "findings": [finding.to_dict() for finding in findings]}
     if args.json:
@@ -179,7 +228,8 @@ def command_baseline(args: argparse.Namespace) -> int:
 
 
 def command_diff(args: argparse.Namespace) -> int:
-    findings = compare(Path(args.path))
+    root = Path(args.path).resolve()
+    findings, _feedback = _policy_feedback_findings(root, compare(root))
     score = calculate_score(findings)
     payload = {"score": score.to_dict(), "findings": [finding.to_dict() for finding in findings]}
     if args.json:
@@ -207,7 +257,8 @@ def _file_from_finding(root: Path, target: str) -> Path | None:
 
 def command_isolate(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
-    findings = [finding for finding in patrol(root) if finding.severity in {Severity.HIGH, Severity.CRITICAL}]
+    findings, _feedback = _policy_feedback_findings(root, patrol(root))
+    findings = [finding for finding in findings if finding.severity in {Severity.HIGH, Severity.CRITICAL}]
     actions = []
     for finding in findings:
         path = _file_from_finding(root, finding.target)
@@ -286,6 +337,80 @@ def command_policy(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_feedback(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    feedback_path = root / ".subreparo" / "feedback.json"
+    if args.false_positive:
+        state = mark_false_positive(args.false_positive, reason=args.reason, path=feedback_path)
+    else:
+        state = load_feedback(feedback_path)
+    payload = state.to_dict()
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Feedback")
+        print("==================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_trust(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    raw_findings = patrol(root) + compare(root)
+    policy = load_policy(root / ".subreparo" / "policy.json")
+    feedback = load_feedback(root / ".subreparo" / "feedback.json")
+    policy_findings = apply_policy(raw_findings, policy)
+    payload = write_trust_report(root, policy_findings, feedback=feedback)
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Trust Report")
+        print("======================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_setup(args: argparse.Namespace) -> int:
+    profile = create_setup_profile(
+        Path(args.path),
+        mode=args.mode,
+        watched_paths=args.watch or None,
+    )
+    payload = profile.to_dict()
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Setup Profile")
+        print("=======================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_watch_plan(args: argparse.Namespace) -> int:
+    payload = build_watch_plan(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Watch Plan")
+        print("====================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def command_sign_report(args: argparse.Namespace) -> int:
+    if args.verify:
+        payload = verify_report_signature(Path(args.path))
+    else:
+        payload = create_report_signature(Path(args.path))
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Report Signature")
+        print("==========================")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0 if not args.verify or payload.get("valid") else 2
+
+
 def command_timeline(args: argparse.Namespace) -> int:
     events = build_timeline(Path(args.path))
     if args.json:
@@ -359,13 +484,16 @@ def command_rules(args: argparse.Namespace) -> int:
 
 
 def command_review(args: argparse.Namespace) -> int:
-    results = run_swarm(Path(args.path), websites=args.website)
+    root = Path(args.path).resolve()
+    results = run_swarm(root, websites=args.website)
     findings = flatten(results)
+    findings, _feedback = _policy_feedback_findings(root, findings)
     score = calculate_score(findings)
     payload = {
         "score": score.to_dict(),
         "analyzers": [result.to_dict() for result in results],
         "findings": [finding.to_dict() for finding in findings],
+        "trust": build_trust_report_from_findings(root, findings),
     }
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True))
@@ -435,6 +563,16 @@ def main(argv: list[str] | None = None) -> int:
         return command_quarantine(args)
     if args.command == "policy":
         return command_policy(args)
+    if args.command == "feedback":
+        return command_feedback(args)
+    if args.command == "trust":
+        return command_trust(args)
+    if args.command == "setup":
+        return command_setup(args)
+    if args.command == "watch-plan":
+        return command_watch_plan(args)
+    if args.command == "sign-report":
+        return command_sign_report(args)
     if args.command == "timeline":
         return command_timeline(args)
     if args.command == "trends":
@@ -458,8 +596,3 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "init":
         return command_init(args)
     parser.error(f"Unknown command: {args.command}")
-    return 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
