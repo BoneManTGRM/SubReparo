@@ -4,11 +4,18 @@ import argparse
 import json
 from pathlib import Path
 
-from .installer_manifest import VALID_PLATFORMS, build_installer_manifest, write_installer_manifest
+from .installer_manifest import (
+    VALID_PLATFORMS,
+    build_installer_manifest,
+    write_installer_manifest,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="subreparo-installer", description="Show SubReparo installer packaging manifest.")
+    parser = argparse.ArgumentParser(
+        prog="subreparo-installer",
+        description="Show SubReparo package manifest.",
+    )
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--platform", choices=("all",) + VALID_PLATFORMS, default="all")
     parser.add_argument("--write-manifest", action="store_true")
@@ -32,8 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        print("SubReparo Installer Manifest")
-        print("============================")
+        print("SubReparo Package Manifest")
+        print("==========================")
         print(f"Version: {payload['version']}")
         print(f"Platforms: {payload['platform_count']}")
     return 0
