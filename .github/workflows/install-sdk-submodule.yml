@@ -1,0 +1,45 @@
+name: Install Polkadot SDK Submodule
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/install-sdk-submodule.yml"
+      - ".gitmodules"
+
+permissions:
+  contents: write
+
+jobs:
+  install-submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add Polkadot SDK submodule if missing
+        run: |
+          if [ ! -e sdk/polkadot-sdk ]; then
+            git submodule add -b master https://github.com/paritytech/polkadot-sdk.git sdk/polkadot-sdk
+          else
+            echo "sdk/polkadot-sdk already exists"
+          fi
+
+      - name: Commit submodule pointer
+        run: |
+          if git diff --quiet -- .gitmodules sdk/polkadot-sdk; then
+            echo "No submodule changes to commit"
+          else
+            git add .gitmodules sdk/polkadot-sdk
+            git commit -m "Pin Polkadot SDK foundation submodule"
+            git push
+          fi
