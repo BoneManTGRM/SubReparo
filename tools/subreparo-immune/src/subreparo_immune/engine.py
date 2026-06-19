@@ -19,7 +19,9 @@ from .policy import apply_policy, load_policy
 from .process_scan import scan_processes
 from .redaction import redact_mapping, redact_text
 from .reparodynamics import finding_signal, score_repair
+from .scheduled_task_scan import scan_scheduled_tasks
 from .scoring import calculate_score
+from .severity_explain import explain_severity, severity_sentence
 from .shortcut_scan import scan_shortcuts
 from .signed_reports import create_report_signature
 from .startup_scan import scan_startup
@@ -59,6 +61,7 @@ class EngineResult:
             "generated_at": self.generated_at,
             "score": score.to_dict(),
             "findings": [finding.to_dict() for finding in self.findings],
+            "severity_explanations": [explain_severity(finding) for finding in self.findings],
             "reparodynamics": [repair_metrics(finding) for finding in self.findings],
             "trust": build_trust_report_from_findings(Path(self.project), self.findings),
             "report_path": self.report_path,
@@ -76,6 +79,7 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
         + patrol(project_path)
         + compare(project_path)
         + scan_startup(project_path)
+        + scan_scheduled_tasks(project_path)
         + scan_browser_extensions(project_path)
         + scan_shortcuts(project_path)
         + scan_processes()
@@ -192,6 +196,7 @@ def write_report(result: EngineResult) -> None:
         )
         lines.append(f"  - Message: {redact_text(finding.message)}")
         lines.append(f"  - Explanation: {explain_finding(finding)}")
+        lines.append(f"  - Severity explanation: {severity_sentence(finding)}")
         lines.append(f"  - Recommendation: {redact_text(finding.recommendation)}")
         lines.append(f"  - Trust score: {trust_item.get('score', 'n/a')}")
         lines.append(f"  - TGRM phase: {metrics['tgrm_phase']}")
@@ -209,6 +214,7 @@ def append_ledger(result: EngineResult) -> None:
                 "created_at": result.generated_at,
                 "project": result.project,
                 "finding": finding.to_dict(),
+                "severity_explanation": explain_severity(finding),
                 "reparodynamics": repair_metrics(finding),
                 "trust": trust_by_target.get(finding.target),
                 "status": "pending",
@@ -228,6 +234,7 @@ def write_export(result: EngineResult) -> None:
             "target": redact_text(finding.target),
             "status": "pending",
             "summary": redact_text(finding.message),
+            "severity_explanation": severity_sentence(finding),
             "tgrm_phase": metrics["tgrm_phase"],
             "rye": metrics["rye"],
             "trust_score": trust_item.get("score"),
