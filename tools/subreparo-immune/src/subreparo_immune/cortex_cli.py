@@ -5,6 +5,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
+from .agent_components import build_agent_component_report
 from .approval_queue import enqueue_approval, pending_approvals
 from .cortex_memory import append_memory, append_task, read_memory, read_tasks
 from .cortex_models import CortexTaskStatus
@@ -21,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--memory", action="store_true", help="Show Cortex memory records.")
     parser.add_argument("--approvals", action="store_true", help="Show pending approval requests.")
     parser.add_argument("--status", action="store_true", help="Show Cortex status report.")
+    parser.add_argument("--components", action="store_true", help="Show AI agent component readiness.")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -62,15 +64,18 @@ def main(argv: list[str] | None = None) -> int:
         payload = {"approvals": [item.to_dict() for item in pending_approvals(root / ".subreparo" / "approval_queue.jsonl")]}
     elif args.status:
         payload = build_status_report(root)
+    elif args.components:
+        payload = build_agent_component_report(root)
     else:
         payload = {
-            "message": "Use --plan, --next, --memory, --approvals, or --status.",
+            "message": "Use --plan, --next, --memory, --approvals, --status, or --components.",
             "commands": [
                 "subreparo-cortex . --plan",
                 "subreparo-cortex . --next",
                 "subreparo-cortex . --memory",
                 "subreparo-cortex . --approvals",
                 "subreparo-cortex . --status",
+                "subreparo-cortex . --components",
             ],
         }
 
