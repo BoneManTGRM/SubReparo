@@ -22,6 +22,36 @@ Then open:
 http://127.0.0.1:8765
 ```
 
+## macOS double-click launcher
+
+The repo also includes:
+
+```text
+scripts/start-subreparo-control-center.command
+```
+
+On macOS, make it executable once:
+
+```bash
+chmod +x scripts/start-subreparo-control-center.command
+```
+
+Then double-click it from Finder.
+
+## Windows command launcher
+
+From Command Prompt at the repository root:
+
+```cmd
+scripts\start-subreparo-control-center.cmd
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
 ## Manual launch
 
 ```bash
@@ -36,6 +66,16 @@ Then open:
 ```text
 http://127.0.0.1:8765
 ```
+
+## Launch readiness check
+
+After installing the package:
+
+```bash
+subreparo-launch-check . --json
+```
+
+This reports whether the local launch scripts and launch docs are present.
 
 ## What you can see now
 
