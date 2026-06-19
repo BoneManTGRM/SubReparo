@@ -9,7 +9,7 @@ from .dashboard import serve
 from .engine import run_local
 from .immune_patrol import patrol
 from .models import Severity
-from .quarantine import stage_file
+from .quarantine import list_records, restore_all, restore_record, stage_file
 from .scoring import calculate_score
 from .swarm import flatten, run_swarm
 
@@ -46,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
     isolate_parser.add_argument("path", nargs="?", default=".")
     isolate_parser.add_argument("--apply", action="store_true", help="Apply staging. Without this flag, only prints the plan.")
     isolate_parser.add_argument("--json", action="store_true")
+
+    q_parser = subparsers.add_parser("quarantine", help="List or restore staged files.")
+    q_parser.add_argument("path", nargs="?", default=".")
+    q_parser.add_argument("--restore-index", type=int)
+    q_parser.add_argument("--restore-all", action="store_true")
+    q_parser.add_argument("--json", action="store_true")
 
     review_parser = subparsers.add_parser("review", help="Run all local analyzer groups.")
     review_parser.add_argument("path", nargs="?", default=".")
@@ -181,6 +187,37 @@ def command_isolate(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_quarantine(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    state_dir = root / ".subreparo"
+    if args.restore_all:
+        restored = restore_all(root, state_dir=state_dir)
+        payload = {"restored": [record.to_dict() for record in restored]}
+    elif args.restore_index is not None:
+        record = restore_record(root, args.restore_index, state_dir=state_dir)
+        payload = {"restored": [record.to_dict()]}
+    else:
+        records = list_records(state_dir)
+        payload = {"records": [record.to_dict() for record in records]}
+
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    elif "records" in payload:
+        print("SubReparo Quarantine")
+        print("====================")
+        if not payload["records"]:
+            print("No staged files found.")
+        for index, record in enumerate(payload["records"]):
+            print(f"[{index}] {record['staged_path']}")
+            print(f"  Original: {record['original_path']}")
+            print(f"  Reason: {record['reason']}")
+    else:
+        print("SubReparo restore complete")
+        for record in payload["restored"]:
+            print(f"- Restored: {record['original_path']}")
+    return 0
+
+
 def command_review(args: argparse.Namespace) -> int:
     results = run_swarm(Path(args.path), websites=args.website)
     findings = flatten(results)
@@ -234,6 +271,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_diff(args)
     if args.command == "isolate":
         return command_isolate(args)
+    if args.command == "quarantine":
+        return command_quarantine(args)
     if args.command == "review":
         return command_review(args)
     if args.command == "dashboard":
