@@ -26,6 +26,6 @@ SubReparo is a local-first repair-memory platform for AI and software systems wi
 ## Continuing gates
 
 - Production release requires manual review.
-- Installer artifacts require signing review before public distribution.
+- Package artifacts require signing review before public distribution.
 - Runtime chain wiring requires tests, benchmarks, and review.
 - Raw private project data should stay local by default.
