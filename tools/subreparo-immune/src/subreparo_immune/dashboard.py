@@ -10,12 +10,17 @@ from .agent_components import build_agent_component_report
 from .approval_queue import pending_approvals
 from .quarantine import list_records
 from .status_report import build_status_report
+from .watcher import build_watch_plan
 
 REPORT_PATH = Path(".subreparo") / "report.md"
 EXPORT_PATH = Path(".subreparo") / "chain_export.json"
 LEDGER_PATH = Path(".subreparo") / "repair_ledger.jsonl"
 ALERTS_PATH = Path(".subreparo") / "watch_alerts.jsonl"
 QUALITY_PATH = Path(".subreparo") / "quality_report.json"
+TRUST_PATH = Path(".subreparo") / "trust_report.json"
+SIGNATURE_PATH = Path(".subreparo") / "report_signature.json"
+SETUP_PROFILE_PATH = Path(".subreparo") / "setup_profile.json"
+FEEDBACK_PATH = Path(".subreparo") / "feedback.json"
 SNAPSHOT_MANIFEST_PATH = Path(".subreparo") / "snapshots" / "snapshot_manifest.jsonl"
 STATE_DIR = Path(".subreparo")
 
@@ -46,6 +51,16 @@ def tail_jsonl(path: Path, limit: int = 8) -> list[dict[str, Any]]:
     return rows
 
 
+def render_json_file(path: Path, fallback: str) -> str:
+    if not path.exists():
+        return fallback
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
 def render_quarantine() -> str:
     records = list_records(STATE_DIR)
     if not records:
@@ -65,6 +80,11 @@ def render_status_report() -> str:
 
 def render_agent_components() -> str:
     payload = build_agent_component_report(Path("."))
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def render_watch_plan() -> str:
+    payload = build_watch_plan(Path("."))
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
@@ -93,7 +113,12 @@ def render_page() -> str:
     report = html.escape(read_text(REPORT_PATH, "No report found. Run `subreparo-immune run .` first."))
     export = html.escape(read_text(EXPORT_PATH, "No chain export found."))
     alerts = html.escape(read_text(ALERTS_PATH, "No monitor alerts found."))
-    quality = html.escape(read_text(QUALITY_PATH, "No quality report found. Run `subreparo-immune quality .`."))
+    quality = html.escape(render_json_file(QUALITY_PATH, "No quality report found. Run `subreparo-immune quality .`."))
+    trust = html.escape(render_json_file(TRUST_PATH, "No trust report found. Run `subreparo-immune trust .`."))
+    signature = html.escape(render_json_file(SIGNATURE_PATH, "No report signature found. Run `subreparo-immune sign-report .`."))
+    setup = html.escape(render_json_file(SETUP_PROFILE_PATH, "No setup profile found. Run `subreparo-immune setup .`."))
+    feedback = html.escape(render_json_file(FEEDBACK_PATH, "No feedback file found. Run `subreparo-immune feedback .`."))
+    watch_plan = html.escape(render_watch_plan())
     quarantine = html.escape(render_quarantine())
     cortex_status = html.escape(render_status_report())
     agent_components = html.escape(render_agent_components())
@@ -113,10 +138,20 @@ def render_page() -> str:
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background: #0f1115; color: #f5f7fb; }}
     header {{ padding: 24px; background: #171b24; border-bottom: 1px solid #2c3342; }}
-    main {{ padding: 24px; display: grid; gap: 20px; max-width: 1100px; margin: 0 auto; }}
-    section {{ background: #171b24; border: 1px solid #2c3342; border-radius: 14px; padding: 18px; }}
+    main {{ padding: 24px; max-width: 1200px; margin: 0 auto; }}
+    .tabs > input {{ position: absolute; opacity: 0; pointer-events: none; }}
+    .tab-labels {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }}
+    .tab-labels label {{ cursor: pointer; padding: 10px 14px; background: #171b24; border: 1px solid #2c3342; border-radius: 999px; }}
+    .tab-panel {{ display: none; }}
+    .panel-grid {{ display: grid; gap: 20px; }}
+    .card {{ background: #171b24; border: 1px solid #2c3342; border-radius: 14px; padding: 18px; }}
     pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #0b0d12; padding: 14px; border-radius: 10px; }}
     .metric {{ display: inline-block; margin-right: 18px; margin-bottom: 10px; padding: 10px 14px; background: #222838; border-radius: 10px; }}
+    #tab-overview:checked ~ .tab-panels #panel-overview,
+    #tab-cortex:checked ~ .tab-panels #panel-cortex,
+    #tab-components:checked ~ .tab-panels #panel-components,
+    #tab-protection:checked ~ .tab-panels #panel-protection,
+    #tab-reports:checked ~ .tab-panels #panel-reports {{ display: block; }}
   </style>
 </head>
 <body>
@@ -125,56 +160,112 @@ def render_page() -> str:
   <p>Local-first project repair dashboard. Bound to localhost by default.</p>
 </header>
 <main>
-  <section>
-    <h2>Status</h2>
-    <div class="metric">Ledger records: {ledger_count}</div>
-    <div class="metric">Alerts: {alert_count}</div>
-    <div class="metric">Quarantine: {quarantine_count}</div>
-    <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
-    <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
-  </section>
-  <section>
-    <h2>Cortex control layer</h2>
-    <div class="metric">Tasks: {status_payload["task_count"]}</div>
-    <div class="metric">Memory: {status_payload["memory_count"]}</div>
-    <div class="metric">Approvals: {status_payload["pending_approvals"]}</div>
-    <div class="metric">Outcomes: {status_payload["outcome_count"]}</div>
-    <pre>{cortex_status}</pre>
-  </section>
-  <section>
-    <h2>AI agent components</h2>
-    <div class="metric">Registered: {component_payload["registered_count"]}</div>
-    <div class="metric">Operational: {component_payload["operational_count"]}</div>
-    <pre>{agent_components}</pre>
-  </section>
-  <section>
-    <h2>Pending approvals</h2>
-    <pre>{approvals}</pre>
-  </section>
-  <section>
-    <h2>Quality gate</h2>
-    <pre>{quality}</pre>
-  </section>
-  <section>
-    <h2>Snapshots</h2>
-    <pre>{snapshots}</pre>
-  </section>
-  <section>
-    <h2>Quarantine</h2>
-    <pre>{quarantine}</pre>
-  </section>
-  <section>
-    <h2>Monitor alerts</h2>
-    <pre>{alerts}</pre>
-  </section>
-  <section>
-    <h2>Latest report</h2>
-    <pre>{report}</pre>
-  </section>
-  <section>
-    <h2>Chain export preview</h2>
-    <pre>{export}</pre>
-  </section>
+  <div class="tabs" aria-label="Dashboard tabs">
+    <input id="tab-overview" type="radio" name="dashboard-tabs" checked>
+    <input id="tab-cortex" type="radio" name="dashboard-tabs">
+    <input id="tab-components" type="radio" name="dashboard-tabs">
+    <input id="tab-protection" type="radio" name="dashboard-tabs">
+    <input id="tab-reports" type="radio" name="dashboard-tabs">
+    <nav class="tab-labels" aria-label="Dashboard tabs">
+      <label for="tab-overview">Overview</label>
+      <label for="tab-cortex">Cortex</label>
+      <label for="tab-components">Agent components</label>
+      <label for="tab-protection">Protection</label>
+      <label for="tab-reports">Reports</label>
+    </nav>
+    <div class="tab-panels">
+      <section id="panel-overview" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>Status</h2>
+            <div class="metric">Ledger records: {ledger_count}</div>
+            <div class="metric">Alerts: {alert_count}</div>
+            <div class="metric">Quarantine: {quarantine_count}</div>
+            <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
+            <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
+          </article>
+          <article class="card">
+            <h2>Setup profile</h2>
+            <pre>{setup}</pre>
+          </article>
+        </div>
+      </section>
+      <section id="panel-cortex" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>Cortex control layer</h2>
+            <div class="metric">Tasks: {status_payload["task_count"]}</div>
+            <div class="metric">Memory: {status_payload["memory_count"]}</div>
+            <div class="metric">Approvals: {status_payload["pending_approvals"]}</div>
+            <div class="metric">Outcomes: {status_payload["outcome_count"]}</div>
+            <pre>{cortex_status}</pre>
+          </article>
+          <article class="card">
+            <h2>Pending approvals</h2>
+            <pre>{approvals}</pre>
+          </article>
+          <article class="card">
+            <h2>Snapshots</h2>
+            <pre>{snapshots}</pre>
+          </article>
+        </div>
+      </section>
+      <section id="panel-components" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>AI agent components</h2>
+            <div class="metric">Registered: {component_payload["registered_count"]}</div>
+            <div class="metric">Operational: {component_payload["operational_count"]}</div>
+            <pre>{agent_components}</pre>
+          </article>
+        </div>
+      </section>
+      <section id="panel-protection" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>Trust report</h2>
+            <pre>{trust}</pre>
+          </article>
+          <article class="card">
+            <h2>False-positive feedback</h2>
+            <pre>{feedback}</pre>
+          </article>
+          <article class="card">
+            <h2>Watch plan</h2>
+            <pre>{watch_plan}</pre>
+          </article>
+          <article class="card">
+            <h2>Quarantine</h2>
+            <pre>{quarantine}</pre>
+          </article>
+          <article class="card">
+            <h2>Monitor alerts</h2>
+            <pre>{alerts}</pre>
+          </article>
+        </div>
+      </section>
+      <section id="panel-reports" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>Quality gate</h2>
+            <pre>{quality}</pre>
+          </article>
+          <article class="card">
+            <h2>Report signature</h2>
+            <pre>{signature}</pre>
+          </article>
+          <article class="card">
+            <h2>Latest report</h2>
+            <pre>{report}</pre>
+          </article>
+          <article class="card">
+            <h2>Chain export preview</h2>
+            <pre>{export}</pre>
+          </article>
+        </div>
+      </section>
+    </div>
+  </div>
 </main>
 </body>
 </html>"""
