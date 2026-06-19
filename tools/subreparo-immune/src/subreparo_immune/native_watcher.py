@@ -54,3 +54,27 @@ def make_alert(event_type: str, path: Path, source: str = "native_watcher") -> W
         source=source,
         created_at=now(),
     )
+
+
+def start_native_observer(root: Path):
+    if not native_watchdog_available():
+        return None
+    from watchdog.events import FileSystemEventHandler  # type: ignore[import-not-found]
+    from watchdog.observers import Observer  # type: ignore[import-not-found]
+
+    class SubReparoEventHandler(FileSystemEventHandler):
+        def on_any_event(self, event):  # noqa: ANN001
+            append_watch_alert(root, make_alert(str(event.event_type), Path(str(event.src_path))))
+
+    observer = Observer()
+    handler = SubReparoEventHandler()
+    for target in build_watch_plan(root).get("targets", []):
+        if not isinstance(target, dict) or target.get("kind") == "process":
+            continue
+        if not target.get("exists"):
+            continue
+        path = Path(str(target.get("path", ""))).expanduser()
+        if path.exists() and path.is_dir():
+            observer.schedule(handler, str(path), recursive=bool(target.get("recursive", True)))
+    observer.start()
+    return observer
