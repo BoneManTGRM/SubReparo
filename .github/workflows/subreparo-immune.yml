@@ -59,6 +59,7 @@ jobs:
           subreparo-immune quality . --json
           subreparo-immune sign-report . --json
           subreparo-immune sign-report . --verify --json
+          subreparo-immune forensic . --json
           subreparo-cortex . --plan --json
           subreparo-cortex . --next --json
           subreparo-cortex . --status --json
