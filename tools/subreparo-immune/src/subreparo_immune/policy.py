@@ -50,6 +50,39 @@ def initialize_policy(path: Path = POLICY_PATH) -> Path:
     return path
 
 
+def add_allowed_hash(value: str, path: Path = POLICY_PATH) -> LocalPolicy:
+    policy = load_policy(path)
+    next_policy = LocalPolicy(
+        allowed_hashes=policy.allowed_hashes | {value},
+        blocked_hashes=policy.blocked_hashes - {value},
+        ignored_targets=policy.ignored_targets,
+    )
+    save_policy(next_policy, path)
+    return next_policy
+
+
+def add_blocked_hash(value: str, path: Path = POLICY_PATH) -> LocalPolicy:
+    policy = load_policy(path)
+    next_policy = LocalPolicy(
+        allowed_hashes=policy.allowed_hashes - {value},
+        blocked_hashes=policy.blocked_hashes | {value},
+        ignored_targets=policy.ignored_targets,
+    )
+    save_policy(next_policy, path)
+    return next_policy
+
+
+def add_ignored_target(value: str, path: Path = POLICY_PATH) -> LocalPolicy:
+    policy = load_policy(path)
+    next_policy = LocalPolicy(
+        allowed_hashes=policy.allowed_hashes,
+        blocked_hashes=policy.blocked_hashes,
+        ignored_targets=policy.ignored_targets | {value},
+    )
+    save_policy(next_policy, path)
+    return next_policy
+
+
 def apply_policy(findings: list[Finding], policy: LocalPolicy) -> list[Finding]:
     filtered: list[Finding] = []
     for finding in findings:
