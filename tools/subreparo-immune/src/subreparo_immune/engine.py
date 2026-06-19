@@ -11,21 +11,26 @@ from .baseline import compare
 from .browser_scan import scan_browser_extensions
 from .detectors import check_website, scan_git, scan_project, write_json
 from .explain import explain_finding
+from .feedback import apply_false_positive_feedback, load_feedback
 from .immune_patrol import patrol
+from .models import Finding, Severity
 from .network_scan import scan_network
 from .policy import apply_policy, load_policy
 from .process_scan import scan_processes
 from .redaction import redact_mapping, redact_text
-from .models import Finding, Severity
 from .reparodynamics import finding_signal, score_repair
 from .scoring import calculate_score
 from .shortcut_scan import scan_shortcuts
+from .signed_reports import create_report_signature
 from .startup_scan import scan_startup
+from .trust import build_trust_report_from_findings, write_trust_report
 
 STATE_DIR = Path(".subreparo")
 REPORT_PATH = STATE_DIR / "report.md"
 LEDGER_PATH = STATE_DIR / "repair_ledger.jsonl"
 EXPORT_PATH = STATE_DIR / "chain_export.json"
+TRUST_REPORT_PATH = STATE_DIR / "trust_report.json"
+SIGNATURE_PATH = STATE_DIR / "report_signature.json"
 
 SEVERITY_STRESS = {
     Severity.INFO: 0.0,
@@ -44,6 +49,8 @@ class EngineResult:
     report_path: str
     ledger_path: str
     export_path: str
+    trust_report_path: str
+    signature_path: str
 
     def to_dict(self) -> dict[str, Any]:
         score = calculate_score(self.findings)
@@ -53,9 +60,12 @@ class EngineResult:
             "score": score.to_dict(),
             "findings": [finding.to_dict() for finding in self.findings],
             "reparodynamics": [repair_metrics(finding) for finding in self.findings],
+            "trust": build_trust_report_from_findings(Path(self.project), self.findings),
             "report_path": self.report_path,
             "ledger_path": self.ledger_path,
             "export_path": self.export_path,
+            "trust_report_path": self.trust_report_path,
+            "signature_path": self.signature_path,
         })
 
 
@@ -76,6 +86,9 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
     findings = apply_policy(findings, policy)
     for url in websites or []:
         findings.extend(check_website(url))
+    feedback = load_feedback(project_path / ".subreparo" / "feedback.json")
+    write_trust_report(project_path, findings, feedback=feedback)
+    findings = apply_false_positive_feedback(findings, feedback)
     result = EngineResult(
         project=str(project_path),
         generated_at=datetime.now(timezone.utc).isoformat(),
@@ -83,11 +96,23 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
         report_path=str(REPORT_PATH),
         ledger_path=str(LEDGER_PATH),
         export_path=str(EXPORT_PATH),
+        trust_report_path=str(TRUST_REPORT_PATH),
+        signature_path=str(SIGNATURE_PATH),
     )
     write_report(result)
     append_ledger(result)
     write_export(result)
-    append_audit("run_local", {"project": str(project_path), "findings": len(findings)}, project_path / ".subreparo" / "audit.jsonl")
+    signature = create_report_signature(project_path)
+    append_audit(
+        "run_local",
+        {
+            "project": str(project_path),
+            "findings": len(findings),
+            "report_signature": signature.get("signature"),
+            "signature_type": signature.get("signature_type"),
+        },
+        project_path / ".subreparo" / "audit.jsonl",
+    )
     return result
 
 
