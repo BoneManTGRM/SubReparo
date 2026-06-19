@@ -55,6 +55,8 @@ jobs:
           subreparo-modes --json
           subreparo-cortex "$tmpdir" --plan --json
           subreparo-cortex "$tmpdir" --next --json
+          subreparo-cortex "$tmpdir" --approvals --json
+          subreparo-cortex "$tmpdir" --status --json
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
 
