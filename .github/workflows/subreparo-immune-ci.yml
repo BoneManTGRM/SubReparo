@@ -64,6 +64,7 @@ jobs:
           subreparo-cortex "$tmpdir" --plans --json
           subreparo-cortex "$tmpdir" --messaging --json
           python -m subreparo_immune.messaging_cli --status --json
+          python -c "import subreparo_immune.agent_core, subreparo_immune.agent_proofs, subreparo_immune.immune_agent_cli"
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
           mkdir -p "$tmpdir/addons/docs"
