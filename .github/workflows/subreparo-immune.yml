@@ -57,6 +57,7 @@ jobs:
           subreparo-cortex . --next --json
           subreparo-cortex . --status --json
           subreparo-cortex . --approvals --json
+          subreparo-cortex . --components --json
           subreparo-sbom . --json
           subreparo-modes --json
           subreparo-quarantine . --json
