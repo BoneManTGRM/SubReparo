@@ -20,6 +20,7 @@ class FindingType(str, Enum):
     DEPENDENCY_REVIEW = "dependency_review"
     GIT_REVIEW = "git_review"
     WEBSITE_RESPONSE = "website_response"
+    IMMUNE_PATROL = "immune_patrol"
     REPEATED_SIGNAL = "repeated_signal"
 
 
