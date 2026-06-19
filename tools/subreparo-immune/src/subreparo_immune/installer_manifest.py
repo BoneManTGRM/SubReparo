@@ -27,6 +27,9 @@ def _platform_entry(name: str) -> dict[str, Any]:
             "subreparo-cortex",
             "subreparo-alerts",
             "subreparo-tray",
+            "subreparo-installer",
+            "subreparo-updater",
+            "subreparo-fleet",
         ],
         "safety": {
             "local_install": True,
