@@ -1,8 +1,8 @@
-# SubReparo V2
+# SubReparo
 
 SubReparo is a local-first repair-memory system for AI agents, software projects, websites, and autonomous infrastructure.
 
-This repository is the clean private home for SubReparo V2. It is not a fork.
+This repository is the clean private home for SubReparo. It is not a fork.
 
 ## Core idea
 
@@ -19,7 +19,7 @@ SubReparo Chain   -> Polkadot SDK / FRAME repair-ledger memory
 
 ## Full SDK foundation
 
-SubReparo V2 uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
+SubReparo uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
 
 ```text
 sdk/polkadot-sdk
