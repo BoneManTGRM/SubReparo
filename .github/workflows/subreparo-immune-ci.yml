@@ -59,6 +59,9 @@ jobs:
           subreparo-cortex "$tmpdir" --status --json
           subreparo-monitor "$tmpdir" --once --json
           subreparo-sbom "$tmpdir" --json
+          mkdir -p "$tmpdir/addons/docs"
+          printf '{"name":"docs-helper","version":"0.1.0","description":"Local docs helper","permissions":["read_project"]}' > "$tmpdir/addons/docs/skill.json"
+          python -m subreparo_immune.skills_cli "$tmpdir" --json
 
       - name: Run SubReparo quality gate
         run: subreparo-immune quality . --json
