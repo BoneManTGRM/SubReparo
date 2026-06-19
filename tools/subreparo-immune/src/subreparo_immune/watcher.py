@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 import time
 from pathlib import Path
 from queue import Empty, Queue
@@ -69,10 +70,6 @@ def _existing_or_planned(path: Path) -> dict[str, Any]:
 def default_watch_targets(root: Path) -> list[dict[str, Any]]:
     root = root.resolve()
     home = Path.home()
-    temp = Path(tempfile.gettempdir()) if False else None
-    # `tempfile` is imported lazily to keep the module import surface small for tests.
-    import tempfile
-
     temp = Path(tempfile.gettempdir())
     targets = [
         {"kind": "project", **_existing_or_planned(root)},
@@ -135,7 +132,6 @@ def _walk_files(
     skipped = skipped_dir_names or DEFAULT_SKIPPED_DIR_NAMES
     files: list[Path] = []
     stack = [root]
-    truncated = False
     while stack:
         current = stack.pop()
         try:
@@ -154,7 +150,7 @@ def _walk_files(
                         return files, True
             except OSError:
                 continue
-    return files, truncated
+    return files, False
 
 
 def _relative_path(root: Path, path: Path) -> str:
@@ -209,7 +205,10 @@ def _event_severity(path: str) -> str:
 def _event_recommendation(event_type: str, path: str) -> str:
     suffix = Path(path).suffix.lower()
     if suffix in EXECUTABLE_OR_PERSISTENCE_SUFFIXES:
-        return "Review this executable or persistence-capable file before trusting it. Run SubReparo patrol if it was not expected."
+        return (
+            "Review this executable or persistence-capable file before trusting it. "
+            "Run SubReparo patrol if it was not expected."
+        )
     if event_type == "deleted":
         return "Confirm the removal was expected. Run a baseline diff if this is a watched project file."
     return "Confirm this local file event was expected. No automatic repair action was taken."
@@ -324,7 +323,11 @@ def collect_native_file_events(
     structured fallback payload instead of failing.
     """
 
-    roots = [path.expanduser().resolve() for path in paths if path.expanduser().exists() and path.expanduser().is_dir()]
+    roots = [
+        path.expanduser().resolve()
+        for path in paths
+        if path.expanduser().exists() and path.expanduser().is_dir()
+    ]
     if not native_watchdog_available():
         return {
             "schema": "subreparo.native_file_watch.v1",
@@ -332,7 +335,10 @@ def collect_native_file_events(
             "native_available": False,
             "watched_paths": [str(path) for path in roots],
             "events": [],
-            "recommendation": "Install the optional native watcher dependency with subreparo-immune[native-watch] to enable watchdog events.",
+            "recommendation": (
+                "Install the optional native watcher dependency with "
+                "subreparo-immune[native-watch] to enable watchdog events."
+            ),
             "safety": {
                 "local_only": True,
                 "non_destructive": True,
