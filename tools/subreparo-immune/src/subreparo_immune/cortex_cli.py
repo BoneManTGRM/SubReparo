@@ -5,18 +5,22 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
+from .approval_queue import enqueue_approval, pending_approvals
 from .cortex_memory import append_memory, append_task, read_memory, read_tasks
 from .cortex_models import CortexTaskStatus
 from .cortex_planner import next_ready_task, propose_initial_tasks
 from .cortex_policy import classify_task
+from .status_report import build_status_report
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="subreparo-cortex", description="SubReparo Cortex autonomous work scaffold.")
+    parser = argparse.ArgumentParser(prog="subreparo-cortex", description="SubReparo Cortex work scaffold.")
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--plan", action="store_true", help="Create initial Cortex task proposals.")
-    parser.add_argument("--next", action="store_true", help="Show the next ready task and approval decision.")
+    parser.add_argument("--next", action="store_true", help="Show the next ready task and decision.")
     parser.add_argument("--memory", action="store_true", help="Show Cortex memory records.")
+    parser.add_argument("--approvals", action="store_true", help="Show pending approval requests.")
+    parser.add_argument("--status", action="store_true", help="Show Cortex status report.")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -39,6 +43,8 @@ def command_next(root: Path) -> dict[str, object]:
     decision = classify_task(task)
     next_status = CortexTaskStatus.RUNNING if decision.allowed else CortexTaskStatus.WAITING_APPROVAL
     updated = replace(task, status=next_status)
+    if not decision.allowed:
+        enqueue_approval(updated, decision.approval_level, decision.reason, root / ".subreparo" / "approval_queue.jsonl")
     append_memory("next_task_selected", {"task": updated.to_dict(), "decision": decision.to_dict()}, root / ".subreparo" / "cortex_memory.jsonl")
     return {"next_task": updated.to_dict(), "decision": decision.to_dict()}
 
@@ -52,16 +58,23 @@ def main(argv: list[str] | None = None) -> int:
         payload = command_next(root)
     elif args.memory:
         payload = {"memory": read_memory(root / ".subreparo" / "cortex_memory.jsonl")}
+    elif args.approvals:
+        payload = {"approvals": [item.to_dict() for item in pending_approvals(root / ".subreparo" / "approval_queue.jsonl")]}
+    elif args.status:
+        payload = build_status_report(root)
     else:
         payload = {
-            "message": "Use --plan, --next, or --memory.",
-            "commands": ["subreparo-cortex . --plan", "subreparo-cortex . --next", "subreparo-cortex . --memory"],
+            "message": "Use --plan, --next, --memory, --approvals, or --status.",
+            "commands": [
+                "subreparo-cortex . --plan",
+                "subreparo-cortex . --next",
+                "subreparo-cortex . --memory",
+                "subreparo-cortex . --approvals",
+                "subreparo-cortex . --status",
+            ],
         }
 
-    if args.json:
-        print(json.dumps(payload, indent=2, sort_keys=True))
-    else:
-        print(json.dumps(payload, indent=2, sort_keys=True))
+    print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
 
