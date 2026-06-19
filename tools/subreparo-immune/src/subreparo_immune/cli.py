@@ -4,12 +4,15 @@ import argparse
 import json
 from pathlib import Path
 
+from .audit import verify_audit
 from .baseline import compare, write_baseline
 from .dashboard import serve
 from .engine import run_local
+from .incident_bundle import create_bundle
 from .immune_patrol import patrol
 from .models import Severity
 from .quarantine import list_records, restore_all, restore_record, stage_file
+from .rules import rule_catalog
 from .scoring import calculate_score
 from .swarm import flatten, run_swarm
 
@@ -52,6 +55,16 @@ def build_parser() -> argparse.ArgumentParser:
     q_parser.add_argument("--restore-index", type=int)
     q_parser.add_argument("--restore-all", action="store_true")
     q_parser.add_argument("--json", action="store_true")
+
+    bundle_parser = subparsers.add_parser("bundle", help="Create a sanitized incident bundle.")
+    bundle_parser.add_argument("path", nargs="?", default=".")
+    bundle_parser.add_argument("--output")
+
+    audit_parser = subparsers.add_parser("audit", help="Verify the local audit chain.")
+    audit_parser.add_argument("path", nargs="?", default=".")
+
+    rules_parser = subparsers.add_parser("rules", help="Show SubReparo detection rule catalog.")
+    rules_parser.add_argument("--json", action="store_true")
 
     review_parser = subparsers.add_parser("review", help="Run all local analyzer groups.")
     review_parser.add_argument("path", nargs="?", default=".")
@@ -218,6 +231,31 @@ def command_quarantine(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_bundle(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    bundle = create_bundle(Path(args.path), output=output)
+    print(f"SubReparo incident bundle saved at {bundle}")
+    return 0
+
+
+def command_audit(args: argparse.Namespace) -> int:
+    ok = verify_audit(Path(args.path).resolve() / ".subreparo" / "audit.jsonl")
+    print("SubReparo audit chain valid" if ok else "SubReparo audit chain failed validation")
+    return 0 if ok else 2
+
+
+def command_rules(args: argparse.Namespace) -> int:
+    catalog = rule_catalog()
+    if args.json:
+        print(json.dumps(catalog, indent=2, sort_keys=True))
+    else:
+        print("SubReparo Rule Catalog")
+        print("======================")
+        for rule in catalog:
+            print(f"- {rule['rule_id']} v{rule['version']}: {rule['name']} ({rule['category']})")
+    return 0
+
+
 def command_review(args: argparse.Namespace) -> int:
     results = run_swarm(Path(args.path), websites=args.website)
     findings = flatten(results)
@@ -273,6 +311,12 @@ def main(argv: list[str] | None = None) -> int:
         return command_isolate(args)
     if args.command == "quarantine":
         return command_quarantine(args)
+    if args.command == "bundle":
+        return command_bundle(args)
+    if args.command == "audit":
+        return command_audit(args)
+    if args.command == "rules":
+        return command_rules(args)
     if args.command == "review":
         return command_review(args)
     if args.command == "dashboard":
