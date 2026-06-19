@@ -10,6 +10,9 @@ from .agent_components import build_agent_component_report
 from .approval_queue import pending_approvals
 from .quarantine import list_records
 from .status_report import build_status_report
+from .swarm_orchestrator import list_swarm_plans
+from .swarm_roles import swarm_role_catalog
+from .swarm_tools import swarm_tool_catalog
 from .watcher import build_watch_plan
 
 REPORT_PATH = Path(".subreparo") / "report.md"
@@ -109,6 +112,18 @@ def render_snapshots() -> str:
     return json.dumps(snapshots, indent=2, sort_keys=True)
 
 
+def render_swarm_catalog() -> str:
+    payload = {"roles": swarm_role_catalog(), "tools": swarm_tool_catalog()}
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def render_swarm_plans() -> str:
+    plans = list_swarm_plans(Path("."))
+    if not plans:
+        return "No swarm plans found. Run `subreparo-cortex . --orchestrate \"run quality checks\" --json`."
+    return json.dumps(plans[-10:], indent=2, sort_keys=True)
+
+
 def render_page() -> str:
     report = html.escape(read_text(REPORT_PATH, "No report found. Run `subreparo-immune run .` first."))
     export = html.escape(read_text(EXPORT_PATH, "No chain export found."))
@@ -124,17 +139,22 @@ def render_page() -> str:
     agent_components = html.escape(render_agent_components())
     approvals = html.escape(render_approvals())
     snapshots = html.escape(render_snapshots())
+    swarm_catalog = html.escape(render_swarm_catalog())
+    swarm_plans = html.escape(render_swarm_plans())
     ledger_count = count_lines(LEDGER_PATH)
     alert_count = count_lines(ALERTS_PATH)
     quarantine_count = len(list_records(STATE_DIR))
     status_payload = build_status_report(Path("."))
     component_payload = build_agent_component_report(Path("."))
+    swarm_plan_count = len(list_swarm_plans(Path(".")))
+    role_count = len(swarm_role_catalog())
+    tool_count = len(swarm_tool_catalog())
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SubReparo Immune</title>
+  <title>SubReparo Control Center</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background: #0f1115; color: #f5f7fb; }}
     header {{ padding: 24px; background: #171b24; border-bottom: 1px solid #2c3342; }}
@@ -147,8 +167,11 @@ def render_page() -> str:
     .card {{ background: #171b24; border: 1px solid #2c3342; border-radius: 14px; padding: 18px; }}
     pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #0b0d12; padding: 14px; border-radius: 10px; }}
     .metric {{ display: inline-block; margin-right: 18px; margin-bottom: 10px; padding: 10px 14px; background: #222838; border-radius: 10px; }}
+    .swarm-map {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 12px 0; }}
+    .swarm-node {{ padding: 12px; border: 1px solid #39445c; background: #202638; border-radius: 12px; text-align: center; }}
     #tab-overview:checked ~ .tab-panels #panel-overview,
     #tab-cortex:checked ~ .tab-panels #panel-cortex,
+    #tab-swarms:checked ~ .tab-panels #panel-swarms,
     #tab-components:checked ~ .tab-panels #panel-components,
     #tab-protection:checked ~ .tab-panels #panel-protection,
     #tab-reports:checked ~ .tab-panels #panel-reports {{ display: block; }}
@@ -156,19 +179,21 @@ def render_page() -> str:
 </head>
 <body>
 <header>
-  <h1>SubReparo Immune</h1>
-  <p>Local-first project repair dashboard. Bound to localhost by default.</p>
+  <h1>SubReparo Control Center</h1>
+  <p>Local-first autonomous repair, swarm orchestration, and protection dashboard. Bound to localhost by default.</p>
 </header>
 <main>
   <div class="tabs" aria-label="Dashboard tabs">
     <input id="tab-overview" type="radio" name="dashboard-tabs" checked>
     <input id="tab-cortex" type="radio" name="dashboard-tabs">
+    <input id="tab-swarms" type="radio" name="dashboard-tabs">
     <input id="tab-components" type="radio" name="dashboard-tabs">
     <input id="tab-protection" type="radio" name="dashboard-tabs">
     <input id="tab-reports" type="radio" name="dashboard-tabs">
     <nav class="tab-labels" aria-label="Dashboard tabs">
       <label for="tab-overview">Overview</label>
       <label for="tab-cortex">Cortex</label>
+      <label for="tab-swarms">Swarms</label>
       <label for="tab-components">Agent components</label>
       <label for="tab-protection">Protection</label>
       <label for="tab-reports">Reports</label>
@@ -181,6 +206,7 @@ def render_page() -> str:
             <div class="metric">Ledger records: {ledger_count}</div>
             <div class="metric">Alerts: {alert_count}</div>
             <div class="metric">Quarantine: {quarantine_count}</div>
+            <div class="metric">Swarm plans: {swarm_plan_count}</div>
             <div class="metric">Report: {"present" if REPORT_PATH.exists() else "missing"}</div>
             <div class="metric">Chain export: {"present" if EXPORT_PATH.exists() else "missing"}</div>
           </article>
@@ -210,6 +236,33 @@ def render_page() -> str:
           </article>
         </div>
       </section>
+      <section id="panel-swarms" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>Live swarm map</h2>
+            <div class="metric">Roles: {role_count}</div>
+            <div class="metric">Tools: {tool_count}</div>
+            <div class="metric">Saved plans: {swarm_plan_count}</div>
+            <div class="swarm-map">
+              <div class="swarm-node">Planner</div>
+              <div class="swarm-node">Sentinel</div>
+              <div class="swarm-node">Builder</div>
+              <div class="swarm-node">Tester</div>
+              <div class="swarm-node">Reviewer</div>
+              <div class="swarm-node">Archivist</div>
+            </div>
+            <p>Goal → route → role → bounded tools → approval requirement → saved plan.</p>
+          </article>
+          <article class="card">
+            <h2>Saved swarm plans</h2>
+            <pre>{swarm_plans}</pre>
+          </article>
+          <article class="card">
+            <h2>Swarm roles and tools</h2>
+            <pre>{swarm_catalog}</pre>
+          </article>
+        </div>
+      </section>
       <section id="panel-components" class="tab-panel">
         <div class="panel-grid">
           <article class="card">
@@ -222,46 +275,19 @@ def render_page() -> str:
       </section>
       <section id="panel-protection" class="tab-panel">
         <div class="panel-grid">
-          <article class="card">
-            <h2>Trust report</h2>
-            <pre>{trust}</pre>
-          </article>
-          <article class="card">
-            <h2>False-positive feedback</h2>
-            <pre>{feedback}</pre>
-          </article>
-          <article class="card">
-            <h2>Watch plan</h2>
-            <pre>{watch_plan}</pre>
-          </article>
-          <article class="card">
-            <h2>Quarantine</h2>
-            <pre>{quarantine}</pre>
-          </article>
-          <article class="card">
-            <h2>Monitor alerts</h2>
-            <pre>{alerts}</pre>
-          </article>
+          <article class="card"><h2>Trust report</h2><pre>{trust}</pre></article>
+          <article class="card"><h2>False-positive feedback</h2><pre>{feedback}</pre></article>
+          <article class="card"><h2>Watch plan</h2><pre>{watch_plan}</pre></article>
+          <article class="card"><h2>Quarantine</h2><pre>{quarantine}</pre></article>
+          <article class="card"><h2>Monitor alerts</h2><pre>{alerts}</pre></article>
         </div>
       </section>
       <section id="panel-reports" class="tab-panel">
         <div class="panel-grid">
-          <article class="card">
-            <h2>Quality gate</h2>
-            <pre>{quality}</pre>
-          </article>
-          <article class="card">
-            <h2>Report signature</h2>
-            <pre>{signature}</pre>
-          </article>
-          <article class="card">
-            <h2>Latest report</h2>
-            <pre>{report}</pre>
-          </article>
-          <article class="card">
-            <h2>Chain export preview</h2>
-            <pre>{export}</pre>
-          </article>
+          <article class="card"><h2>Quality gate</h2><pre>{quality}</pre></article>
+          <article class="card"><h2>Report signature</h2><pre>{signature}</pre></article>
+          <article class="card"><h2>Latest report</h2><pre>{report}</pre></article>
+          <article class="card"><h2>Chain export preview</h2><pre>{export}</pre></article>
         </div>
       </section>
     </div>
