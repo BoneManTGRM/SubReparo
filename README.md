@@ -31,8 +31,29 @@ SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, r
 SubReparo Cortex     -> planning, approval queue, status report, memory, safe work loop
 SubReparo Repair     -> repair planning, verification, timeline, audit, learning memory
 SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles, quality gates
+SubReparo Desktop    -> future Windows/macOS/Linux control center
 SubReparo Chain      -> Polkadot SDK / FRAME repair-ledger memory
 ```
+
+## Desktop application vision
+
+SubReparo should evolve into a desktop application for Windows, macOS, and Linux with:
+
+```text
+live swarm visualization
+interactive graph of agent collaboration
+memory browser
+threat and health dashboard
+timeline of actions
+one-click scan and repair
+24/7 background monitoring
+approval queue for high-impact actions
+self-learning metrics and performance trends
+```
+
+The goal is to make SubReparo feel like an operating system for autonomous repair and protection rather than a collection of scripts.
+
+Details: `subreparo/docs/DESKTOP_APP_VISION.md`.
 
 ## AI agent ingredients
 
@@ -143,6 +164,7 @@ subreparo/docs/REPARODYNAMICS.md
 - local report integrity signatures with optional HMAC key support;
 - Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
 - Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
+- desktop application vision and control-center roadmap;
 - safe project snapshots before high-risk work;
 - quality gate command and CI smoke tests;
 - git working-tree review;
