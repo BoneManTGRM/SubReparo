@@ -10,8 +10,11 @@ from .models import Finding, FindingType, Severity
 ENCODED_COMMAND = re.compile(r"(?i)(powershell|pwsh).{0,120}(-enc|-encodedcommand)")
 HIDDEN_COMMAND = re.compile(r"(?i)(-windowstyle\s+hidden|wscript|cscript|mshta)")
 REMOTE_RUN = re.compile(r"(?i)(curl|wget|iwr|invoke-webrequest).{0,160}(bash|sh|powershell|pwsh|cmd)")
-RISKY_LOCATION = re.compile(r"(?i)(appdata|temp|tmp|downloads|public|programdata)")
+RISKY_LOCATION = re.compile(r"(?i)(appdata|temp|tmp|downloads|public|programdata|/tmp/|/var/tmp/)")
 SCRIPT_LAUNCH = re.compile(r"(?i)(\.ps1|\.vbs|\.jse|\.js|\.bat|\.cmd|\.sh|\.py)")
+BINARY_LAUNCH = re.compile(r"(?i)(\.exe|\.scr|\.com|\.dll|\.so|\.dylib)(?:\s|$)")
+SHELL_OR_LOADER = re.compile(r"(?i)(powershell|pwsh|cmd\.exe|/bin/sh|/bin/bash|bash\s+-c|sh\s+-c|wscript|cscript|mshta|rundll32|regsvr32|curl|wget)")
+RISKY_PARENTS = re.compile(r"(?i)(winword|excel|powerpnt|outlook|acrord|chrome|msedge|firefox|safari|teams|slack)")
 
 
 @dataclass(frozen=True)
@@ -72,10 +75,18 @@ def _parse_wmic(output: str) -> list[ProcessSnapshot]:
     return rows
 
 
+def _parent_command(process: ProcessSnapshot, by_pid: dict[str, ProcessSnapshot]) -> str:
+    parent = by_pid.get(process.ppid)
+    return parent.command if parent else ""
+
+
 def scan_processes(processes: list[ProcessSnapshot] | None = None) -> list[Finding]:
     findings: list[Finding] = []
-    for process in processes if processes is not None else list_processes():
+    process_rows = processes if processes is not None else list_processes()
+    by_pid = {process.pid: process for process in process_rows}
+    for process in process_rows:
         command = process.command
+        parent_command = _parent_command(process, by_pid)
         target = f"pid={process.pid};ppid={process.ppid}"
         if ENCODED_COMMAND.search(command):
             findings.append(Finding(
@@ -112,5 +123,23 @@ def scan_processes(processes: list[ProcessSnapshot] | None = None) -> list[Findi
                 message="script process launched from commonly abused location",
                 recommendation="Review the script origin and isolate it if it is unexpected.",
                 detail=command[:240],
+            ))
+        if BINARY_LAUNCH.search(command) and RISKY_LOCATION.search(command):
+            findings.append(Finding(
+                type=FindingType.IMMUNE_PATROL,
+                severity=Severity.MEDIUM,
+                target=target,
+                message="unknown binary appears to run from commonly abused location",
+                recommendation="Confirm the binary publisher and origin before trusting this process.",
+                detail=command[:240],
+            ))
+        if parent_command and RISKY_PARENTS.search(parent_command) and SHELL_OR_LOADER.search(command):
+            findings.append(Finding(
+                type=FindingType.IMMUNE_PATROL,
+                severity=Severity.HIGH,
+                target=target,
+                message="unusual parent-child process relationship observed",
+                recommendation="Review why an application process launched a shell, script host, or network loader.",
+                detail=f"parent={parent_command[:160]} child={command[:160]}",
             ))
     return findings
