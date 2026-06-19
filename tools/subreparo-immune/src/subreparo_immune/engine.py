@@ -6,13 +6,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .audit import append_audit
 from .baseline import compare
 from .browser_scan import scan_browser_extensions
 from .detectors import check_website, scan_git, scan_project, write_json
 from .explain import explain_finding
 from .immune_patrol import patrol
-from .models import Finding, Severity
+from .network_scan import scan_network
 from .policy import apply_policy, load_policy
+from .process_scan import scan_processes
+from .redaction import redact_mapping, redact_text
+from .models import Finding, Severity
 from .reparodynamics import finding_signal, score_repair
 from .scoring import calculate_score
 from .shortcut_scan import scan_shortcuts
@@ -43,7 +47,7 @@ class EngineResult:
 
     def to_dict(self) -> dict[str, Any]:
         score = calculate_score(self.findings)
-        return {
+        return redact_mapping({
             "project": self.project,
             "generated_at": self.generated_at,
             "score": score.to_dict(),
@@ -52,7 +56,7 @@ class EngineResult:
             "report_path": self.report_path,
             "ledger_path": self.ledger_path,
             "export_path": self.export_path,
-        }
+        })
 
 
 def run_local(project_path: Path, websites: list[str] | None = None) -> EngineResult:
@@ -64,6 +68,8 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
         + scan_startup(project_path)
         + scan_browser_extensions(project_path)
         + scan_shortcuts(project_path)
+        + scan_processes()
+        + scan_network()
         + scan_git(project_path)
     )
     policy = load_policy(project_path / ".subreparo" / "policy.json")
@@ -81,6 +87,7 @@ def run_local(project_path: Path, websites: list[str] | None = None) -> EngineRe
     write_report(result)
     append_ledger(result)
     write_export(result)
+    append_audit("run_local", {"project": str(project_path), "findings": len(findings)}, project_path / ".subreparo" / "audit.jsonl")
     return result
 
 
@@ -103,7 +110,7 @@ def write_report(result: EngineResult) -> None:
     lines = [
         "# SubReparo Immune Report",
         "",
-        f"Project: `{result.project}`",
+        f"Project: `{redact_text(result.project)}`",
         f"Generated: {result.generated_at}",
         "",
         "## Score",
@@ -124,10 +131,10 @@ def write_report(result: EngineResult) -> None:
         lines.append("No project signals detected.")
     for finding in result.findings:
         metrics = repair_metrics(finding)
-        lines.append(f"- **{finding.severity.value.upper()}** `{finding.type.value}` at `{finding.target}`")
-        lines.append(f"  - Message: {finding.message}")
+        lines.append(f"- **{finding.severity.value.upper()}** `{finding.type.value}` at `{redact_text(finding.target)}`")
+        lines.append(f"  - Message: {redact_text(finding.message)}")
         lines.append(f"  - Explanation: {explain_finding(finding)}")
-        lines.append(f"  - Recommendation: {finding.recommendation}")
+        lines.append(f"  - Recommendation: {redact_text(finding.recommendation)}")
         lines.append(f"  - TGRM phase: {metrics['tgrm_phase']}")
         lines.append(f"  - RYE: {metrics['rye']}")
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -138,13 +145,13 @@ def append_ledger(result: EngineResult) -> None:
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
     with LEDGER_PATH.open("a", encoding="utf-8") as handle:
         for finding in result.findings:
-            handle.write(json.dumps({
+            handle.write(json.dumps(redact_mapping({
                 "created_at": result.generated_at,
                 "project": result.project,
                 "finding": finding.to_dict(),
                 "reparodynamics": repair_metrics(finding),
                 "status": "pending",
-            }, sort_keys=True) + "\n")
+            }), sort_keys=True) + "\n")
 
 
 def write_export(result: EngineResult) -> None:
@@ -155,9 +162,9 @@ def write_export(result: EngineResult) -> None:
             "local_id": index,
             "category": finding.type.value,
             "severity": finding.severity.value,
-            "target": finding.target,
+            "target": redact_text(finding.target),
             "status": "pending",
-            "summary": finding.message,
+            "summary": redact_text(finding.message),
             "tgrm_phase": metrics["tgrm_phase"],
             "rye": metrics["rye"],
         })
