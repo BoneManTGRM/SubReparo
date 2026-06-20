@@ -22,6 +22,22 @@ Then open:
 http://127.0.0.1:8765
 ```
 
+## iPhone / same-Wi-Fi mobile preview
+
+Use token-gated mobile preview:
+
+```bash
+subreparo-immune dashboard --host 0.0.0.0 --mobile-preview --token change-this-token
+```
+
+Then open the computer's local network address on your iPhone, for example:
+
+```text
+http://192.168.1.25:8765/?token=change-this-token
+```
+
+Details: `subreparo/docs/MOBILE_PREVIEW.md`.
+
 ## macOS double-click launcher
 
 The repo also includes:
