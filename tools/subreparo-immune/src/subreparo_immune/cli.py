@@ -149,6 +149,8 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard_parser = subparsers.add_parser("dashboard", help="Start the local dashboard.")
     dashboard_parser.add_argument("--host", default="127.0.0.1")
     dashboard_parser.add_argument("--port", type=int, default=8765)
+    dashboard_parser.add_argument("--mobile-preview", action="store_true", help="Allow same-Wi-Fi mobile preview with token.")
+    dashboard_parser.add_argument("--token", help="Required when using --mobile-preview outside localhost.")
 
     init_parser = subparsers.add_parser("init", help="Initialize local SubReparo state.")
     init_parser.add_argument("path", nargs="?", default=".")
@@ -544,7 +546,7 @@ def command_quality(args: argparse.Namespace) -> int:
 
 
 def command_dashboard(args: argparse.Namespace) -> int:
-    serve(host=args.host, port=args.port)
+    serve(host=args.host, port=args.port, mobile_preview=args.mobile_preview, token=args.token)
     return 0
 
 
