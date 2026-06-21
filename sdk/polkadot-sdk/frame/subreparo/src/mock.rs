@@ -50,6 +50,7 @@ impl system::Config for Test {
 impl pallet_subreparo::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type ControllerOrigin = frame_system::EnsureRoot<u64>;
+    type WeightInfo = ();
     type MaxRepairsPerBlock = MaxRepairsPerBlock;
     type EpochCooldown = EpochCooldown;
     type MaxRepairStep = MaxRepairStep;
