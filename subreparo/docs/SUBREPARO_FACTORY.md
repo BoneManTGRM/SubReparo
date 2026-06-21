@@ -22,6 +22,32 @@ website_monitor   -> check website health with network-read only
 report_generator  -> generate structured local reports from SubReparo state
 ```
 
+## Commands
+
+List blueprints:
+
+```bash
+subreparo-factory . --blueprints --json
+```
+
+Preview a manifest and review result:
+
+```bash
+subreparo-factory . --manifest code_review --json
+```
+
+Create a local scaffold and register it when the review allows it:
+
+```bash
+subreparo-factory . --create code_review --register --json
+```
+
+List registry records:
+
+```bash
+subreparo-factory . --registry --json
+```
+
 ## Factory records
 
 Factory output is stored locally under:
