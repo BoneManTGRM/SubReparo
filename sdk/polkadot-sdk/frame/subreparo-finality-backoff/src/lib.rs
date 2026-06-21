@@ -1,9 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod weights;
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::Get};
     use frame_system::pallet_prelude::*;
     use pallet_subreparo as subreparo;
@@ -11,6 +22,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + subreparo::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type WeightInfo: WeightInfo;
 
         #[pallet::constant]
         type PauseThreshold: Get<u32>;
@@ -35,7 +47,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2))]
+        #[pallet::weight(T::WeightInfo::set_finality_lag())]
         pub fn set_finality_lag(origin: OriginFor<T>, lag: u32) -> DispatchResult {
             T::ControllerOrigin::ensure_origin(origin)?;
             FinalityLag::<T>::put(lag);
