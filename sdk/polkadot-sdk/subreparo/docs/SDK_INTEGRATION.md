@@ -36,6 +36,24 @@ PauseThreshold = 12
 ResumeThreshold = 4
 ```
 
+## Added scaffold support
+
+The repo now includes:
+
+```text
+Cargo.toml files
+mock runtimes
+unit-test scaffolds
+benchmarking stubs
+weights stubs
+workspace integration notes
+runtime example wiring
+observability guide
+verification checklist
+Python TGRM harness invariant tests
+GitHub Actions harness workflow
+```
+
 ## Review policy
 
 No production runtime should enable automatic repair until the following are demonstrated:
@@ -56,6 +74,16 @@ Use the Python harness to demonstrate the core idea before runtime integration:
 
 ```bash
 python subreparo/harness/tgrm_vs_baseline.py --csv subreparo/harness/tgrm_vs_baseline.csv
+python -m pytest subreparo/harness
 ```
 
 The harness is not the runtime. It is only a reproducible comparison demo for drift correction behavior.
+
+## Deeper docs
+
+```text
+sdk/polkadot-sdk/subreparo/docs/WORKSPACE_INTEGRATION.md
+sdk/polkadot-sdk/subreparo/docs/RUNTIME_EXAMPLE_WIRING.md
+sdk/polkadot-sdk/subreparo/docs/OBSERVABILITY.md
+sdk/polkadot-sdk/subreparo/docs/VERIFICATION_CHECKLIST.md
+```
