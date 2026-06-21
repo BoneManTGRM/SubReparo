@@ -1,0 +1,14 @@
+# Example SubReparo Prometheus metric names
+# These are documentation examples. Real export depends on runtime/node telemetry wiring.
+
+subreparo_drift_level 0
+subreparo_repairs_applied_total 0
+subreparo_repair_correction_abs_total 0
+subreparo_repairs_paused 0
+subreparo_epoch_index 0
+subreparo_cooldown_remaining 0
+subreparo_repairs_this_block 0
+subreparo_controller_breaches 0
+subreparo_controller_suggestions_total 0
+subreparo_finality_lag 0
+subreparo_backoff_pause_total 0
