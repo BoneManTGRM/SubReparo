@@ -1,166 +1,89 @@
 # SubReparo
 
-SubReparo is a local-first adaptive repair platform for AI agents, software projects, endpoints, websites, and autonomous infrastructure.
+SubReparo is a modified Polkadot SDK/Substrate runtime package that applies **Reparodynamics** and the **Targeted Gradient Repair Mechanism (TGRM)** to bounded runtime self-repair.
 
-This repository is the clean private home for SubReparo. It is not a fork.
+It is not an AI-agent platform, antivirus, or endpoint security product. The core project is a runtime/control-layer modification focused on:
+
+```text
+measure drift -> trigger threshold -> apply bounded repair -> enforce cooldown -> log proof -> verify stability
+```
 
 ## Product position
 
-SubReparo is not only an antivirus and not only a scanner.
+SubReparo is a **TGRM repair layer for Polkadot SDK/Substrate runtimes**.
 
-It is an adaptive repair and resilience layer:
-
-```text
-observe -> detect -> explain -> isolate -> repair -> verify -> remember -> improve
-```
-
-## Start the Control Center
-
-macOS / Linux:
-
-```bash
-bash scripts/start-subreparo-control-center.sh
-```
-
-Manual:
-
-```bash
-cd tools/subreparo-immune
-python -m pip install -e .
-cd ../..
-subreparo-immune dashboard
-```
-
-Then open:
+The project goal is to make runtime repair:
 
 ```text
-http://127.0.0.1:8765
+bounded
+authorized
+replay-safe
+cooldown-limited
+observable
+benchmarkable
+reversible where possible
+compatible with Polkadot SDK integration
 ```
-
-Details: `subreparo/docs/CONTROL_CENTER_LAUNCH.md`.
-
-## Best direction
-
-The strongest path is broader than cybersecurity:
-
-```text
-SubReparo Adaptive Repair Platform
-```
-
-Cybersecurity is one protection module. The larger product is self-healing infrastructure for software, AI systems, developer machines, client environments, and future chain-backed repair memory.
 
 ## Architecture
 
 ```text
-SubReparo Immune     -> local defensive sensors, patrol, baseline, quarantine, reports, agent core
-SubReparo Cortex     -> planning, approval queue, status report, memory, safe work loop
-SubReparo Repair     -> repair planning, verification, timeline, audit, learning memory
-SubReparo Platform   -> policy, dashboard, modes, inventory, incident bundles, quality gates
-SubReparo Desktop    -> future Windows/macOS/Linux control center
-SubReparo Chain      -> Polkadot SDK / FRAME repair-ledger memory
+SubReparo SDK Runtime
+├─ pallet-subreparo              -> bounded drift repair, pause switch, nonce/replay guard
+├─ pallet-subreparo-controller   -> automated bounded gradient suggestion/application
+├─ pallet-finality-backoff       -> slows or pauses repair during finality lag risk
+├─ benchmarking + weights        -> FRAME benchmarking stubs and generated weights path
+├─ observability                 -> events, metrics names, audit/replay guidance
+├─ comparison harness            -> TGRM vs baseline simulation/demo
+└─ docs                          -> integration, safety policy, reviewer checklist
 ```
 
-## Desktop application vision
+## Core law
 
-SubReparo should evolve into a desktop application for Windows, macOS, and Linux with:
+SubReparo implements the Reparodynamics/TGRM idea:
 
 ```text
-live swarm visualization
-interactive graph of agent collaboration
-memory browser
-threat and health dashboard
-timeline of actions
-one-click scan and repair
-24/7 background monitoring
-approval queue for high-impact actions
-self-learning metrics and performance trends
+error = measured runtime drift
+if abs(error) > τ and persistence >= m:
+    correction = clamp(gradient(error), -E_max, +E_max)
+    apply correction only if authorized, within budget, and outside cooldown
+    emit RepairApplied event
+    record epoch + nonce to prevent replay
+else:
+    do nothing
 ```
 
-The goal is to make SubReparo feel like an operating system for autonomous repair and protection rather than a collection of scripts.
+## Safety model
 
-Details: `subreparo/docs/DESKTOP_APP_VISION.md`.
-
-## AI agent ingredients
-
-SubReparo Cortex now exposes the standard AI-agent component stack:
+SubReparo repairs must be constrained by runtime policy:
 
 ```text
-1. LLM brain
-2. Prompting and instructions
-3. Memory
-4. External knowledge
-5. Tools
+privileged origin only
+per-block repair cap
+epoch cooldown
+energy/step cap
+emergency pause switch
+nonce-based replay protection
+finality lag backoff
+benchmark-derived weights
+observable events and metrics
 ```
 
-The three minimum ingredients are also tracked explicitly:
+## SDK foundation
 
-```text
-external knowledge + tools + prompting
-```
-
-The LLM brain is registered as a component, but no external model is connected by default. Any live model connector must be defensive, local-first where possible, and approval-gated before private project context is shared outside the machine.
-
-Run:
-
-```bash
-subreparo-cortex . --components --json
-```
-
-Details: `subreparo/docs/AGENT_COMPONENTS.md`.
-
-## Immune agent core
-
-SubReparo Immune now has a Python-first agent-core prototype:
-
-```text
-observe -> detect -> plan -> repair -> verify
-```
-
-It records scar memory, cycle records, outcome records, swarm plans, and proof exports for later chain submission.
-
-```bash
-subreparo-immune-agent . --cycle "project health review" --json
-subreparo-immune-agent . --scars --json
-subreparo-immune-agent . --proof --json
-subreparo-immune-agent . --write-proof --json
-subreparo-immune-agent . --bot-backend "project health review" --json
-```
-
-Details: `subreparo/docs/IMMUNE_AGENT_CORE.md`.
-
-## Platform completion layer
-
-The final local-first platform scaffolds are now exposed as commands:
-
-```bash
-subreparo-alerts . --json
-subreparo-tray . --json
-subreparo-installer . --json
-subreparo-updater . --json
-subreparo-fleet . --json
-```
-
-These commands cover alert planning, tray manifest state, Windows/macOS/Linux packaging manifests, dry-run update planning, and local fleet dashboard summaries. High-impact release or update actions remain manual-review gated.
-
-Details: `subreparo/docs/PLATFORM_COMPLETION.md`.
-
-## Full SDK foundation
-
-SubReparo uses Polkadot SDK as its chain foundation through a pinned SDK workspace path:
+SubReparo uses Polkadot SDK as its foundation through:
 
 ```text
 sdk/polkadot-sdk
 ```
 
-This keeps the repository clean while still giving SubReparo the full SDK foundation.
-
-To install the SDK foundation locally:
+Install or update the SDK foundation:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-Or run:
+or:
 
 ```bash
 bash scripts/bootstrap-sdk-foundation.sh
@@ -172,232 +95,88 @@ Windows:
 ./scripts/bootstrap-sdk-foundation.ps1
 ```
 
-The SDK workspace receives the SubReparo additions:
+## Intended SDK layout
+
+```text
+sdk/polkadot-sdk/frame/subreparo
+sdk/polkadot-sdk/frame/subreparo-controller
+sdk/polkadot-sdk/frame/subreparo-finality-backoff
+sdk/polkadot-sdk/subreparo/docs
+sdk/polkadot-sdk/subreparo/harness
+```
+
+Current scaffolded path may also include earlier names such as:
 
 ```text
 sdk/polkadot-sdk/frame/reparodynamics
-sdk/polkadot-sdk/tools/subreparo-immune
-sdk/polkadot-sdk/subreparo/docs
 ```
 
-## Reparodynamics layer
+Those should be consolidated toward the SDK layout above.
 
-SubReparo includes first-class Reparodynamics concepts:
+## Build direction
+
+Target deliverable:
 
 ```text
-stress -> fracture -> repair -> verification -> scar memory -> adaptation
+A reviewer-ready Polkadot SDK runtime modification package implementing bounded TGRM repair.
 ```
 
-TGRM repair phases:
+Next implementation priorities:
 
 ```text
-TEST -> DETECT -> REPAIR -> VERIFY -> MEMORY
+1. pallet-subreparo: compile-ready FRAME pallet
+2. pallet-subreparo-controller: bounded gradient controller
+3. pallet-finality-backoff: finality lag pause/slowdown policy
+4. replay-safe epoch + nonce handling
+5. emergency pause and privileged origin wiring
+6. frame-benchmarking stubs and weights
+7. simulation/comparison harness
+8. Prometheus/Grafana metric guide
+9. devnet run instructions
+10. reviewer checklist
 ```
 
-RYE metric:
+## What this is not
 
 ```text
-RYE = repair_gain / energy_cost
+not an antivirus
+not a phone app
+not an AI-agent framework
+not a promise of automatic security
+not a replacement for Polkadot governance or runtime review
 ```
 
-These are implemented in:
+## What this is
 
 ```text
-tools/subreparo-immune/src/subreparo_immune/reparodynamics.py
-subreparo/docs/REPARODYNAMICS.md
+an experimental SDK/runtime repair mechanism
+an applied Reparodynamics/TGRM implementation
+a bounded control-loop scaffold
+a runtime safety and observability research package
+a path toward auditable adaptive runtime behavior
 ```
 
-## What works now
+## Verification goals
 
-- local Python engine under `tools/subreparo-immune`;
-- PyPI-ready package metadata;
-- project scanning;
-- defensive immune patrol for scripts, binaries, launchers, startup entries, browser extensions, runtime processes, and network signals;
-- baseline integrity memory and diffing;
-- dependency manifest review, dependency inventory, and firewall suggestions;
-- quarantine staging and restore controls;
-- policy allowlist/blocklist/ignore-target management;
-- false-positive feedback records;
-- file, folder, and domain trust scoring;
-- trust scores in markdown reports, append-only ledger records, and chain export payloads;
-- first-run setup profile;
-- native file watcher event collection with metadata-only polling fallback;
-- local alert planning and alert inbox records;
-- desktop tray manifest scaffold;
-- Windows, macOS, and Linux package manifests;
-- dry-run update plan scaffold;
-- local fleet dashboard manifest;
-- local report integrity signatures with optional HMAC key support;
-- Cortex planning, memory, approval queue, status report, swarm routing, swarm plans, and outcome records;
-- Cortex AI-agent component registry for LLM brain, prompting, memory, external knowledge, and tools;
-- Immune agent core for observe/detect/plan/verify cycles, scar memory, and proof export;
-- local Control Center launcher and launch docs;
-- desktop application vision and control-center roadmap;
-- safe project snapshots before high-risk work;
-- quality gate command and CI smoke tests;
-- git working-tree review;
-- website response check;
-- score and markdown report;
-- timeline and risk trend summaries;
-- incident bundle export with privacy redaction;
-- hash-chained audit log;
-- local tabbed dashboard;
-- rule catalog and rule changelog;
-- Reparodynamics, TGRM, and RYE metrics;
-- local repair ledger;
-- chain export payload;
-- CI workflow for the Python tool;
-- `frame/reparodynamics` pallet scaffold;
-- SDK bootstrap and bridge docs.
-
-## Quick install
-
-Unix/macOS:
-
-```bash
-bash scripts/install-subreparo-immune.sh
-```
-
-Windows PowerShell:
-
-```powershell
-./scripts/install-subreparo-immune.ps1
-```
-
-Manual:
-
-```bash
-cd tools/subreparo-immune
-python -m pip install -e .
-```
-
-Optional native file watcher support:
-
-```bash
-cd tools/subreparo-immune
-python -m pip install -e ".[native-watch]"
-```
-
-Details: `subreparo/docs/NATIVE_FILE_WATCHER.md`.
-
-## Quick test
-
-```bash
-subreparo-immune init .
-subreparo-immune setup . --mode simple
-subreparo-immune doctor .
-subreparo-immune patrol .
-subreparo-immune baseline .
-subreparo-immune diff .
-subreparo-immune trust .
-subreparo-immune quality .
-subreparo-immune sign-report .
-subreparo-monitor . --once
-subreparo-monitor . --native-watch --duration 15 --json
-subreparo-alerts . --json
-subreparo-tray . --json
-subreparo-installer . --json
-subreparo-updater . --json
-subreparo-fleet . --json
-```
-
-## Useful commands
-
-```bash
-subreparo-immune run . --json
-subreparo-immune isolate .
-subreparo-immune isolate . --apply
-subreparo-immune quarantine .
-subreparo-immune quarantine . --restore-index 0
-subreparo-immune policy . --allow-hash <sha256>
-subreparo-immune policy . --block-hash <sha256>
-subreparo-immune policy . --ignore-target <target>
-subreparo-immune feedback . --false-positive <target> --reason "known safe"
-subreparo-immune trust . --json
-subreparo-immune setup . --mode developer --watch src
-subreparo-immune watch-plan . --json
-subreparo-monitor . --native-watch --all-targets --duration 30 --json
-subreparo-alerts . --write-inbox --json
-subreparo-tray . --write-manifest --json
-subreparo-installer . --write-manifest --json
-subreparo-updater . --write-plan --json
-subreparo-fleet . --write-dashboard --json
-subreparo-immune sign-report . --json
-subreparo-immune sign-report . --verify --json
-subreparo-immune timeline .
-subreparo-immune trends .
-subreparo-immune inventory .
-subreparo-immune firewall .
-subreparo-immune bundle .
-subreparo-immune audit .
-subreparo-immune rules
-subreparo-immune quality . --json
-subreparo-immune dashboard
-subreparo-cortex . --plan --json
-subreparo-cortex . --next --json
-subreparo-cortex . --memory --json
-subreparo-cortex . --approvals --json
-subreparo-cortex . --status --json
-subreparo-cortex . --components --json
-subreparo-cortex . --swarm --json
-subreparo-cortex . --route 'run quality checks' --json
-subreparo-cortex . --orchestrate 'run quality checks' --json
-subreparo-cortex . --plans --json
-subreparo-immune-agent . --cycle 'project health review' --json
-subreparo-immune-agent . --scars --json
-subreparo-immune-agent . --proof --json
-subreparo-immune-agent . --write-proof --json
-subreparo-immune-agent . --bot-backend 'project health review' --json
-```
-
-Outputs:
+A credible SubReparo demo should prove:
 
 ```text
-.subreparo/report.md
-.subreparo/repair_ledger.jsonl
-.subreparo/chain_export.json
-.subreparo/quarantine_manifest.jsonl
-.subreparo/audit.jsonl
-.subreparo/feedback.json
-.subreparo/trust_report.json
-.subreparo/setup_profile.json
-.subreparo/report_signature.json
-.subreparo/native_alerts.jsonl
-.subreparo/tray_manifest.json
-.subreparo/installer_manifest.json
-.subreparo/update_plan.json
-.subreparo/fleet_dashboard.json
-.subreparo/cortex_memory.jsonl
-.subreparo/cortex_tasks.jsonl
-.subreparo/approval_queue.jsonl
-.subreparo/outcome_records.jsonl
-.subreparo/agent_cycles.jsonl
-.subreparo/agent_scars.jsonl
-.subreparo/agent_proof_export.json
-.subreparo/quality_report.json
-.subreparo/snapshots/
+bounded correction never exceeds configured limits
+cooldown prevents oscillation
+replay guard rejects duplicate repair nonces
+pause switch stops repair
+finality lag backoff slows or pauses repair
+benchmarks produce weights
+TGRM harness improves drift/stability under controlled conditions
+all repair events are replayable from logs
 ```
 
-## Chain target
+## Development status
 
-```text
-.subreparo/chain_export.json
-        -> submit_repair_event
-        -> pallet-reparodynamics
-        -> SubReparo repair ledger
+Research/prototype. The repo is being refocused into a Polkadot SDK/Substrate runtime modification package. Older agent, desktop, mobile, and antivirus-oriented scaffolds may remain temporarily but are not the core SubReparo direction.
 
-.subreparo/agent_proof_export.json
-        -> submit_agent_proof
-        -> pallet-reparodynamics
-        -> shared agent proof state
-```
+## License
 
-## Private data rule
+Code: Apache-2.0 target.
 
-Raw project files, local logs, private notes, and customer data should stay local by default.
-
-The chain should store safe summaries, labels, status values, RYE metrics, TGRM phases, and digests only.
-
-## Status
-
-Alpha MVP. Local-first product is usable; SDK foundation is pinned by submodule/bootstrap path; chain pallet is scaffolded and still needs runtime wiring, tests, benchmarks, and review.
+Docs/papers: CC BY 4.0 target unless otherwise stated.
