@@ -5,6 +5,7 @@ Use this checklist before claiming SDK/runtime readiness.
 ## Compile checks
 
 ```bash
+cargo metadata --no-deps
 cargo check -p pallet-subreparo
 cargo check -p pallet-subreparo-controller
 cargo check -p pallet-subreparo-finality-backoff
@@ -22,6 +23,7 @@ cargo test -p pallet-subreparo-finality-backoff
 
 ```bash
 python subreparo/harness/tgrm_vs_baseline.py --csv subreparo/harness/tgrm_vs_baseline.csv
+python -m pip install pytest
 python -m pytest subreparo/harness
 ```
 
@@ -49,6 +51,12 @@ replace stub weights
 confirm weights are included in runtime
 ```
 
+Command notes:
+
+```text
+sdk/polkadot-sdk/subreparo/docs/BENCHMARKING_COMMANDS.md
+```
+
 ## Devnet validation
 
 ```text
@@ -62,6 +70,20 @@ simulate finality lag
 confirm emitted events
 extract metrics
 replay repair history
+```
+
+Scenario guide:
+
+```text
+sdk/polkadot-sdk/subreparo/devnet/SCENARIOS.md
+```
+
+## Replay and observability
+
+```text
+sdk/polkadot-sdk/subreparo/docs/EVENT_REPLAY_SCHEMA.md
+sdk/polkadot-sdk/subreparo/docs/OBSERVABILITY.md
+sdk/polkadot-sdk/subreparo/metrics/prometheus-example.txt
 ```
 
 ## Claim boundary
