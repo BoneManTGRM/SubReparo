@@ -1,9 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod weights;
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::Get};
     use frame_system::pallet_prelude::*;
     use pallet_subreparo as subreparo;
@@ -11,6 +22,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + subreparo::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type WeightInfo: WeightInfo;
 
         #[pallet::constant]
         type Tau: Get<i64>;
@@ -47,7 +59,7 @@ pub mod pallet {
             let drift = subreparo::DriftLevel::<T>::get();
             if subreparo::RepairsPaused::<T>::get() {
                 ConsecutiveBreaches::<T>::put(0);
-                return Weight::zero();
+                return T::WeightInfo::on_initialize_observe();
             }
 
             let tau = T::Tau::get().abs();
@@ -73,8 +85,9 @@ pub mod pallet {
                     nonce,
                     gradient,
                 );
+                return T::WeightInfo::on_initialize_apply();
             }
-            Weight::zero()
+            T::WeightInfo::on_initialize_observe()
         }
     }
 }
