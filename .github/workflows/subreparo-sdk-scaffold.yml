@@ -1,0 +1,47 @@
+name: SubReparo SDK Scaffold
+
+on:
+  push:
+    paths:
+      - "sdk/polkadot-sdk/frame/subreparo/**"
+      - "sdk/polkadot-sdk/frame/subreparo-controller/**"
+      - "sdk/polkadot-sdk/frame/subreparo-finality-backoff/**"
+      - "subreparo/harness/**"
+      - ".github/workflows/subreparo-sdk-scaffold.yml"
+  pull_request:
+    paths:
+      - "sdk/polkadot-sdk/frame/subreparo/**"
+      - "sdk/polkadot-sdk/frame/subreparo-controller/**"
+      - "sdk/polkadot-sdk/frame/subreparo-finality-backoff/**"
+      - "subreparo/harness/**"
+      - ".github/workflows/subreparo-sdk-scaffold.yml"
+  workflow_dispatch:
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run TGRM harness
+        run: python subreparo/harness/tgrm_vs_baseline.py --csv subreparo/harness/tgrm_vs_baseline.csv
+      - name: Run harness invariant tests
+        run: |
+          python -m pip install pytest
+          python -m pytest subreparo/harness
+
+  sdk-scaffold-note:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show SDK scaffold verification commands
+        run: |
+          echo "When a full Polkadot SDK checkout is initialized, run:"
+          echo "cargo check -p pallet-subreparo"
+          echo "cargo check -p pallet-subreparo-controller"
+          echo "cargo check -p pallet-subreparo-finality-backoff"
+          echo "cargo test -p pallet-subreparo"
+          echo "cargo test -p pallet-subreparo-controller"
+          echo "cargo test -p pallet-subreparo-finality-backoff"
