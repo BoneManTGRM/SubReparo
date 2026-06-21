@@ -1,9 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod weights;
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::Get};
     use frame_system::pallet_prelude::*;
 
@@ -11,6 +22,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+        type WeightInfo: WeightInfo;
 
         #[pallet::constant]
         type MaxRepairsPerBlock: Get<u32>;
@@ -66,7 +78,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(6, 5))]
+        #[pallet::weight(T::WeightInfo::repair())]
         pub fn repair(origin: OriginFor<T>, epoch: u32, nonce: u64, gradient: i64) -> DispatchResult {
             T::ControllerOrigin::ensure_origin(origin)?;
             ensure!(!RepairsPaused::<T>::get(), Error::<T>::RepairsArePaused);
@@ -95,7 +107,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::WeightInfo::set_paused())]
         pub fn set_paused(origin: OriginFor<T>, paused: bool) -> DispatchResult {
             T::ControllerOrigin::ensure_origin(origin)?;
             RepairsPaused::<T>::put(paused);
@@ -104,7 +116,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(2)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::WeightInfo::sample_drift())]
         pub fn sample_drift(origin: OriginFor<T>, drift: i64) -> DispatchResult {
             T::ControllerOrigin::ensure_origin(origin)?;
             DriftLevel::<T>::put(drift);
@@ -113,7 +125,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(3)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 1))]
+        #[pallet::weight(T::WeightInfo::advance_epoch())]
         pub fn advance_epoch(origin: OriginFor<T>) -> DispatchResult {
             T::ControllerOrigin::ensure_origin(origin)?;
             let next = EpochIndex::<T>::get().saturating_add(1);
